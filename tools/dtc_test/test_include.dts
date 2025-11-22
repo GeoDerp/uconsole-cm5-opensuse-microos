@@ -1,0 +1,9 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/rp1.h>
+
+/ {
+	compatible = "test,overlay";
+};

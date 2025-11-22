@@ -1,0 +1,60 @@
+/*
+ * uConsole CM5 Audio Overlay for RP1 PWM Audio Out
+ * 
+ * Enables the RP1 PWM audio output on GPIO 12/13 for headphone jack.
+ * This provides 2-channel 48kHz 16-bit audio output using PWM.
+ *
+ * Based on Raspberry Pi RP1 audio_out block driver which uses:
+ * - 40x hardware oversampling
+ * - 2nd order noise shaping and dither
+ * - PWM output on GPIO 12 (left) and GPIO 13 (right)
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2712";
+
+	/* Enable the RP1 audio_out hardware block */
+	fragment@0 {
+		target = <&rp1_audio_out>;
+		__overlay__ {
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&rp1_audio_out_12_13>;
+		};
+	};
+
+	/* Create the dummy SPDIF transmitter codec */
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			spdif_out: spdif-transmitter {
+				compatible = "linux,spdif-dit";
+				#sound-dai-cells = <0>;
+				status = "okay";
+			};
+		};
+	};
+
+	/* Create the simple-audio-card to link DAI and codec */
+	fragment@2 {
+		target-path = "/";
+		__overlay__ {
+			uconsole_audio: uconsole-audio-card {
+				compatible = "simple-audio-card";
+				simple-audio-card,name = "uConsole Audio";
+				status = "okay";
+
+				simple-audio-card,cpu {
+					sound-dai = <&rp1_audio_out>;
+				};
+
+				simple-audio-card,codec {
+					sound-dai = <&spdif_out>;
+				};
+			};
+		};
+	};
+};

@@ -1,0 +1,16 @@
+# uConsole CM5 configuration for boot/efi/extraconfig.txt
+# This file should be copied to /boot/efi/extraconfig.txt on the target
+
+# Use the uConsole-specific device tree
+device_tree=merged-clockworkpi.dtb
+
+# Enable USB VBUS (power) for USB ports
+dtoverlay=usb-vbus-hog
+
+# Audio overlay (SPDIF/I2S output) - work in progress
+dtoverlay=uconsole-audio
+
+# Enable DWC2 USB controller in host mode for internal keyboard/trackball
+# The CM5 has DWC2 disabled by default, but the uConsole mainboard connects
+# the internal USB hub (with keyboard/trackball) to this legacy USB path
+dtoverlay=dwc2,dr_mode=host

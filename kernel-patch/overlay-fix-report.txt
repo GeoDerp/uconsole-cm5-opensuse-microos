@@ -1,0 +1,68 @@
+clockworkpi-custom-battery-overlay.dts: no modifications needed
+clockworkpi-devterm-cm5-overlay.dts: auto-fix reverted because dtc compile failed (rc=1). dtc output:
+
+Error: /tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-cm5-overlay.dts:4.1-9 syntax error
+FATAL ERROR: Unable to parse input tree
+
+clockworkpi-devterm-overlay.dts: dtc still reported reg_format warnings after auto-padding; see dtc output:
+
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:34.5-17: Warning (reg_format): /fragment@1/__overlay__/spidev@0:reg: property has invalid length (8 bytes) (#address-cells == 2, #size-cells == 1)
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:177.5-17: Warning (reg_format): /fragment@8/__overlay__/battery@0:reg: property has invalid length (8 bytes) (#address-cells == 2, #size-cells == 1)
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:223.4-14: Warning (reg_format): /fragment@10/__overlay__:reg: property has invalid length (4 bytes) (#address-cells == 2, #size-cells == 1)
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:222.16-229.5: Warning (unit_address_vs_reg): /fragment@10/__overlay__: node has a reg or ranges property, but no unit name
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:224.35-228.6: Warning (unit_address_vs_reg): /fragment@10/__overlay__/backlight@0: node has a unit name, but no reg or ranges property
+/dev/null: Warning (pci_device_reg): Failed prerequisite 'reg_format'
+/dev/null: Warning (pci_device_bus_num): Failed prerequisite 'reg_format'
+/dev/null: Warning (simple_bus_reg): Failed prerequisite 'reg_format'
+/dev/null: Warning (i2c_bus_reg): Failed prerequisite 'reg_format'
+/dev/null: Warning (spi_bus_reg): Failed prerequisite 'reg_format'
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:32.24-39.6: Warning (avoid_default_addr_size): /fragment@1/__overlay__/spidev@0: Relying on default #address-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:32.24-39.6: Warning (avoid_default_addr_size): /fragment@1/__overlay__/spidev@0: Relying on default #size-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:176.23-187.6: Warning (avoid_default_addr_size): /fragment@8/__overlay__/battery@0: Relying on default #address-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:176.23-187.6: Warning (avoid_default_addr_size): /fragment@8/__overlay__/battery@0: Relying on default #size-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:222.16-229.5: Warning (avoid_default_addr_size): /fragment@10/__overlay__: Relying on default #address-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-devterm-overlay.dts:222.16-229.5: Warning (avoid_default_addr_size): /fragment@10/__overlay__: Relying on default #size-cells value
+/dev/null: Warning (avoid_unnecessary_addr_size): Failed prerequisite 'avoid_default_addr_size'
+/dev/null: Warning (unique_unit_address): Failed prerequisite 'avoid_default_addr_size'
+
+clockworkpi-devterm-overlay.dts: modified 4 nodes
+  node battery: add-reg -> <0>
+  node backlight: add-reg -> <0>
+  node spidev: pad-reg-dtc -> reg = <0>; -> reg = <0 0>
+  node battery: pad-reg-dtc -> reg = <0>; -> reg = <0 0>
+clockworkpi-uconsole-cm3-overlay.dts: auto-fix reverted because dtc compile failed (rc=1). dtc output:
+
+Error: /tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-cm3-overlay.dts:4.1-9 syntax error
+FATAL ERROR: Unable to parse input tree
+
+clockworkpi-uconsole-cm5-overlay.dts: auto-fix reverted because dtc compile failed (rc=1). dtc output:
+
+Error: /tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-cm5-overlay.dts:4.1-9 syntax error
+FATAL ERROR: Unable to parse input tree
+
+clockworkpi-uconsole-overlay.dts: dtc still reported reg_format warnings after auto-padding; see dtc output:
+
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:34.5-17: Warning (reg_format): /fragment@1/__overlay__/spidev@0:reg: property has invalid length (8 bytes) (#address-cells == 2, #size-cells == 1)
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:177.5-17: Warning (reg_format): /fragment@8/__overlay__/battery@0:reg: property has invalid length (8 bytes) (#address-cells == 2, #size-cells == 1)
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:224.4-14: Warning (reg_format): /fragment@10/__overlay__:reg: property has invalid length (4 bytes) (#address-cells == 2, #size-cells == 1)
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:223.16-230.5: Warning (unit_address_vs_reg): /fragment@10/__overlay__: node has a reg or ranges property, but no unit name
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:225.35-229.6: Warning (unit_address_vs_reg): /fragment@10/__overlay__/backlight@0: node has a unit name, but no reg or ranges property
+/dev/null: Warning (pci_device_reg): Failed prerequisite 'reg_format'
+/dev/null: Warning (pci_device_bus_num): Failed prerequisite 'reg_format'
+/dev/null: Warning (simple_bus_reg): Failed prerequisite 'reg_format'
+/dev/null: Warning (i2c_bus_reg): Failed prerequisite 'reg_format'
+/dev/null: Warning (spi_bus_reg): Failed prerequisite 'reg_format'
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:32.24-39.6: Warning (avoid_default_addr_size): /fragment@1/__overlay__/spidev@0: Relying on default #address-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:32.24-39.6: Warning (avoid_default_addr_size): /fragment@1/__overlay__/spidev@0: Relying on default #size-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:176.23-187.6: Warning (avoid_default_addr_size): /fragment@8/__overlay__/battery@0: Relying on default #address-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:176.23-187.6: Warning (avoid_default_addr_size): /fragment@8/__overlay__/battery@0: Relying on default #size-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:223.16-230.5: Warning (avoid_default_addr_size): /fragment@10/__overlay__: Relying on default #address-cells value
+/tmp/tmp.RU3g8a2vAn/overlays/clockworkpi-uconsole-overlay.dts:223.16-230.5: Warning (avoid_default_addr_size): /fragment@10/__overlay__: Relying on default #size-cells value
+/dev/null: Warning (avoid_unnecessary_addr_size): Failed prerequisite 'avoid_default_addr_size'
+/dev/null: Warning (unique_unit_address): Failed prerequisite 'avoid_default_addr_size'
+
+clockworkpi-uconsole-overlay.dts: modified 4 nodes
+  node battery: add-reg -> <0>
+  node backlight: add-reg -> <0>
+  node spidev: pad-reg-dtc -> reg = <0>; -> reg = <0 0>
+  node battery: pad-reg-dtc -> reg = <0>; -> reg = <0 0>

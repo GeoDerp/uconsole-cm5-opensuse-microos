@@ -1,0 +1,28 @@
+/**
+ * Minimal overlay to fix RP1 i2c1 pinctrl mapping by adding
+ * a named pin group for gpio44/gpio45 and assigning it to i2c1
+ * This addresses 'invalid brcm,pins value 44' errors on pinctrl-rp1.
+ */
+/dts-v1/;
+/plugin/;
+
+/ {
+    fragment@0 {
+        target-path = "/axi/pcie@1000120000/rp1_nexus/rp1/gpio@d0000";
+        __overlay__ {
+            rp1_i2c1_44_45: rp1_i2c1_44_45 {
+                function = "i2c1"; /* RP1 pinctrl uses "function" rather than brcm,function */
+                bias-pull-up; /* use RP1 style bias indicator */
+                pins = "gpio44", "gpio45";
+            };
+        };
+    };
+
+    fragment@1 {
+        target-path = "/axi/pcie@1000120000/rp1_nexus/rp1/i2c@74000";
+        __overlay__ {
+            pinctrl-0 = <&rp1_i2c1_44_45>;
+            pinctrl-names = "default";
+        };
+    };
+};

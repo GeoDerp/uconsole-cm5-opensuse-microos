@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialize uConsole display and backlight at boot
+After=systemd-modules-load.service local-fs.target
+Wants=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/uconsole-backlight-init.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

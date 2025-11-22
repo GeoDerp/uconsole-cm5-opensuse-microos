@@ -1,0 +1,55 @@
+# Build artifacts and intermediate files
+*.dtb
+*.dtbo
+*.o
+*.ko
+*.mod.c
+*.mod
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+
+# Kernel images
+Image
+Image.*
+
+# Firmware files
+*.elf
+u-boot.bin
+
+# OS images
+*.raw
+*.raw.xz
+*.img
+*.img.xz
+
+# Test run artifacts
+auto-run-*/
+test-results/
+
+# Archives
+*.tar.gz
+*.tar.xz
+*.zip
+
+# Editor files
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Logs
+*.log
+
+# Temporary files
+/tmp/
+
+# Documentation
+/docs/

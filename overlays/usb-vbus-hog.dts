@@ -1,0 +1,32 @@
+/dts-v1/;
+/plugin/;
+
+/* USB VBUS power enable overlay for uConsole CM5
+ * Sets GPIO 42 and 43 high to enable USB VBUS power
+ */
+
+/ {
+    compatible = "brcm,bcm2712";
+
+    /* Target the RP1 GPIO controller */
+    fragment@0 {
+        target-path = "/axi/pcie@1000120000/rp1_nexus/rp1/gpio@d0000";
+        __overlay__ {
+            /* USB VBUS enable GPIO hog - set GPIO 42 high */
+            usb_vbus_en_hog {
+                gpio-hog;
+                gpios = <42 0>;  /* GPIO42, active high */
+                output-high;
+                line-name = "USB_VBUS_EN";
+            };
+
+            /* USB VBUS enable GPIO 43 - some boards use both */
+            usb_vbus_en2_hog {
+                gpio-hog;
+                gpios = <43 0>;  /* GPIO43, active high */
+                output-high;
+                line-name = "USB_VBUS_EN2";
+            };
+        };
+    };
+};
