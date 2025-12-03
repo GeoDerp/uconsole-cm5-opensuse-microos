@@ -265,7 +265,7 @@ static void cwu50_init_sequence(struct cwu50 *ctx)
 static int cwu50_init_sequence2(struct cwu50 *ctx)
 {
 	struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
-	int err;
+
 	dcs_write_seq(0xE0,0x00);
 
 	//--- PASSWORD	----//
@@ -533,8 +533,6 @@ static int cwu50_init_sequence2(struct cwu50 *ctx)
 static int cwu50_disable(struct drm_panel *panel)
 {
 	struct cwu50 *ctx = panel_to_cwu50(panel);
-	struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
-	int ret;
 
 	if (!ctx->enabled)
 		return 0;
@@ -659,8 +657,6 @@ static int cwu50_prepare(struct drm_panel *panel)
 static int cwu50_enable(struct drm_panel *panel)
 {
 	struct cwu50 *ctx = panel_to_cwu50(panel);
-	struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
-	int ret;
 
 	if (ctx->enabled)
 		return 0;
@@ -674,7 +670,6 @@ static int cwu50_enable(struct drm_panel *panel)
 
 static int cwu50_get_modes(struct drm_panel *panel, struct drm_connector *connector)
 {
-	struct cwu50 *ctx = panel_to_cwu50(panel);
 	struct drm_display_mode *mode;
 
 	mode = drm_mode_duplicate(connector->dev, &default_mode);
@@ -688,12 +683,16 @@ static int cwu50_get_modes(struct drm_panel *panel, struct drm_connector *connec
 	connector->display_info.width_mm = mode->width_mm;
 	connector->display_info.height_mm = mode->height_mm;
 
-	/* set up connector's "panel orientation" property */
-	drm_connector_set_panel_orientation(connector, ctx->orientation);
-
 	drm_mode_probed_add(connector, mode);
 
 	return 1; /* Number of modes */
+}
+
+static enum drm_panel_orientation cwu50_get_orientation(struct drm_panel *panel)
+{
+	struct cwu50 *ctx = panel_to_cwu50(panel);
+
+	return ctx->orientation;
 }
 
 static const struct drm_panel_funcs cwu50_drm_funcs = {
@@ -702,6 +701,7 @@ static const struct drm_panel_funcs cwu50_drm_funcs = {
 	.prepare = cwu50_prepare,
 	.enable = cwu50_enable,
 	.get_modes = cwu50_get_modes,
+	.get_orientation = cwu50_get_orientation,
 };
 
 static int cwu50_probe(struct mipi_dsi_device *dsi)
