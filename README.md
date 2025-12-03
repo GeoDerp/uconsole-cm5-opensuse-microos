@@ -206,9 +206,9 @@ There's a clock reparent warning during probe (`failed to reparent clk_audio_out
 │   ├── etc/systemd/system/uconsole-backlight.service
 │   └── usr/local/bin/uconsole-backlight-init.sh
 ├── overlays/                   # Device tree overlays
-│   ├── usb-vbus-hog.dtbo      # USB VBUS GPIO enable
-│   ├── uconsole-audio.dtbo    # Audio card configuration
-│   └── rp1-i2c1-fix.dtbo      # I2C fix overlay
+│   ├── usb-vbus-hog.dts       # USB VBUS GPIO enable
+│   ├── uconsole-audio.dts     # Audio card configuration
+│   └── rp1-i2c1-fix.dts       # I2C fix overlay
 ├── extracted-drivers/          # Out-of-tree kernel modules
 │   ├── panel-cwu50/           # CWU50 DSI panel driver
 │   ├── ocp8178_bl/            # OCP8178 backlight driver (with GPIO fix)
@@ -220,8 +220,7 @@ There's a clock reparent warning during probe (`failed to reparent clk_audio_out
 │   ├── deploy_and_build_drivers.sh  # Driver deployment
 │   ├── deploy_to_device.sh          # General file deployment
 │   └── ...
-├── kernel-patch/               # Kernel patches for reference
-└── docs/                       # Development notes
+└── kernel-patch/               # Kernel patches for reference
 ```
 
 ## Device Tree Configuration
@@ -343,10 +342,6 @@ The internal USB keyboard and trackball require the DWC2 USB controller in host 
    ```bash
    sudo systemctl status wpa_supplicant
    ```
-
-## Development Notes
-
-See `docs/` for detailed development notes and conversation summaries.
 
 ## License
 
