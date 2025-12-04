@@ -158,6 +158,8 @@ This will:
 - Install to `/lib/modules/$(uname -r)/extra/`
 - Update module dependencies
 
+> **Important**: On MicroOS, module installation happens in a new snapshot. You **must reboot** after installation for the display drivers to work. Without a reboot, you'll only see the backlight with no display content.
+
 ### Verifying Hardware
 
 Run the hardware verification script on the uConsole:
@@ -296,21 +298,41 @@ The internal USB keyboard and trackball require the DWC2 USB controller in host 
    echo 8 | sudo tee /sys/class/backlight/backlight@0/brightness
    ```
 
-### Display Not Working
+### Display Not Working (Backlight Only)
 
-1. Check driver loading:
+If you see only the backlight but no display content after boot:
+
+1. **Reboot required after module installation**: On MicroOS, after installing kernel modules via `transactional-update`, you must reboot for changes to take effect. The display drivers won't work until the new snapshot is active.
+
+2. Check for deferred probe timeout in dmesg:
+   ```bash
+   sudo dmesg | grep -i "deferred probe timeout"
+   # If you see this for drm-rp1-dsi, the panel module may not have loaded in time
+   ```
+
+3. Check driver loading:
    ```bash
    lsmod | grep -E "drm_rp1_dsi|panel_cwu50"
+   # Both modules should be loaded
    ```
 
-2. Check DRM connector:
+4. Check DRM connector status:
    ```bash
-   cat /sys/class/drm/*/status
+   cat /sys/class/drm/card0-DSI-1/status
+   # Should show: connected
    ```
 
-3. Verify device tree is loaded:
+5. Verify panel initialization in dmesg:
    ```bash
-   cat /proc/device-tree/soc/axi/pcie@120000/*/dsi@*/panel@*/compatible
+   sudo dmesg | grep -i cwu50
+   # Should show: "Detected old panel type" and "rp1dsi_host_attach"
+   ```
+
+6. If modules loaded but display still blank, try rebinding:
+   ```bash
+   echo 1f00130000.dsi | sudo tee /sys/bus/platform/drivers/drm-rp1-dsi/unbind
+   sleep 1
+   echo 1f00130000.dsi | sudo tee /sys/bus/platform/drivers/drm-rp1-dsi/bind
    ```
 
 ### Battery/PMIC Not Working
