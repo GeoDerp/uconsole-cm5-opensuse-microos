@@ -1,0 +1,63 @@
+/* uConsole CM5 Wofi Style - wpgtk dynamic theming template */
+/* Use with: wpg -ta ~/.config/wofi/style.css */
+
+window {{
+    margin: 0px;
+    border: 2px solid {active};
+    border-radius: 8px;
+    background-color: rgba({color0.rgb}, 0.95);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+}}
+
+#input {{
+    margin: 8px;
+    border: 1px solid {color8};
+    border-radius: 4px;
+    background-color: {color0};
+    color: {color15};
+    padding: 8px;
+}}
+
+#input:focus {{
+    border-color: {active};
+}}
+
+#inner-box {{
+    margin: 4px;
+    background-color: transparent;
+}}
+
+#outer-box {{
+    margin: 4px;
+    padding: 8px;
+    background-color: transparent;
+}}
+
+#scroll {{
+    margin: 0px;
+    border: none;
+}}
+
+#text {{
+    margin: 4px;
+    color: {color15};
+}}
+
+#text:selected {{
+    color: {color0};
+}}
+
+#entry {{
+    padding: 4px 8px;
+    border-radius: 4px;
+}}
+
+#entry:selected {{
+    background-color: {active};
+    color: {color0};
+}}
+
+#entry:hover {{
+    background-color: rgba({color8.rgb}, 0.3);
+}}

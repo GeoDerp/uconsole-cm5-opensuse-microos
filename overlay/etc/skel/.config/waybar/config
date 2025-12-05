@@ -1,0 +1,97 @@
+{
+    "layer": "top",
+    "height": 30,
+    "spacing": 4,
+
+    "modules-left": [
+        "sway/workspaces",
+        "sway/mode"
+    ],
+
+    "modules-right": [
+        "pulseaudio",
+        "network",
+        "cpu",
+        "memory",
+        "temperature",
+        "backlight",
+        "battery",
+        "clock",
+        "tray"
+    ],
+
+    "sway/workspaces": {
+        "disable-scroll": false,
+        "all-outputs": true
+    },
+
+    "sway/mode": {
+        "format": "<span style=\"italic\">{}</span>"
+    },
+
+    "tray": {
+        "spacing": 10
+    },
+
+    "clock": {
+        "tooltip-format": "{:%d-%m-%y | %I:%M %p }",
+        "format": "{:%I:%M %p}",
+        "format-alt": "{:%d-%m-%y}"
+    },
+
+    "cpu": {
+        "format": "{usage}% ▣",
+        "tooltip": true,
+        "interval": 2
+    },
+
+    "memory": {
+        "format": "{}% ◉"
+    },
+
+    "temperature": {
+        "thermal-zone": 0,
+        "critical-threshold": 80,
+        "format-critical": "{temperatureC}°C ⚠",
+        "format": "{temperatureC}°C ◈"
+    },
+
+    "backlight": {
+        "device": "backlight@0",
+        "format": "{percent}% ◐",
+        "on-scroll-up": "brightnessctl -q set +1",
+        "on-scroll-down": "brightnessctl -q set 1-"
+    },
+
+    "battery": {
+        "bat": "axp20x-battery",
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{capacity}% ▮",
+        "format-charging": "{capacity}% ↑",
+        "format-plugged": "{capacity}% ●",
+        "format-alt": "{time} ▮"
+    },
+
+    "network": {
+        "format-wifi": "{essid} ({signalStrength}%) ◆",
+        "format-ethernet": "{ipaddr}/{cidr} ◆",
+        "tooltip-format": "{ifname} via {gwaddr}",
+        "format-linked": "{ifname} (No IP) ⚠",
+        "format-disconnected": "Disconnected ✕",
+        "format-alt": "{ifname}: {ipaddr}/{cidr}"
+    },
+
+    "pulseaudio": {
+        "format": "{volume}% ◀",
+        "format-bluetooth": "{volume}% ◀",
+        "format-bluetooth-muted": "Muted ◁",
+        "format-muted": "Muted ◁",
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+        "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-"
+    }
+}

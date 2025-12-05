@@ -384,5 +384,6 @@ kernel and ClockworkPi and retain their original GPL-2.0 license.
 - **[Rex](https://github.com/clockworkpi)** - CM5 hardware support and uConsole kernel patches 🙏
 - ClockworkPi for the uConsole hardware and original CM4 software
 - Raspberry Pi Foundation for the CM5/BCM2712/RP1 and device tree sources
+- Wallpaper: [*Still Life with Artichokes and a Parrot*](https://www.nga.gov/artworks/102987-still-life-artichokes-and-parrot) - Luis Egidio Meléndez, 1775-1780, National Gallery of Art
 
 
