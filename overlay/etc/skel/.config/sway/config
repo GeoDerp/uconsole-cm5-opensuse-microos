@@ -50,6 +50,9 @@ exec swayidle -w \
     resume 'swaymsg "output * power on"' \
     before-sleep '$lock'
 
+### Lock screen on boot (for security)
+exec $lock
+
 ### Input - uConsole hardware
 input "7855:36:ClockworkPI_uConsole_Keyboard" {
     xkb_layout us

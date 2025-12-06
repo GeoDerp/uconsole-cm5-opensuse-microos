@@ -353,6 +353,22 @@ If you see only the backlight but no display content after boot:
    cat /sys/class/power_supply/axp20x-battery/status
    ```
 
+### Battery-Only Boot Not Working
+
+The uConsole may not boot when running on battery alone (without USB power connected). This is a **bootloader/firmware-level issue**, not a Linux kernel driver issue.
+
+**Root Cause**: The AXP221 PMIC registers that configure power-on sources are set by the Linux kernel driver *after* boot - but if the PMIC doesn't allow battery power-on, the system never boots far enough for the driver to load.
+
+**Workaround**:
+1. Always connect USB power for initial boot
+2. Once booted, the kernel driver configures the PMIC for future battery boots
+3. As long as the battery doesn't fully discharge, subsequent battery boots should work
+
+**Known PMIC registers affected**:
+- `AXP20X_VBUS_IPSOUT_MGMT (0x30)` - VBUS/IPSOUT power path
+- `AXP20X_OFF_CTRL (0x32)` - Power-off control (bit 3 = battery power enable)
+- `AXP20X_PEK_KEY (0x36)` - Power Enable Key configuration
+
 ### No Network After Boot
 
 1. Check WiFi interface:
@@ -364,6 +380,94 @@ If you see only the backlight but no display content after boot:
    ```bash
    sudo systemctl status wpa_supplicant
    ```
+
+## Sway Desktop Environment
+
+The repository includes a complete Sway configuration optimized for the uConsole CM5, including:
+
+- **Sway**: Wayland compositor with DSI display rotation
+- **Waybar**: Status bar with battery, backlight, WiFi, and audio modules
+- **wofi**: Application launcher
+- **kitty**: GPU-accelerated terminal (primary)
+- **foot**: Lightweight Wayland terminal (fallback)
+- **swaylock**: Screen locker with visible indicator ring
+- **swayidle**: Idle management for screen timeout and suspend
+
+### Installing Sway
+
+Run the installation script on the uConsole:
+
+```bash
+# Option 1: Direct install (downloads from GitHub)
+curl -sSL https://raw.githubusercontent.com/GeoDerp/uconsole-cm5-opensuse-microos/master/scripts/install-sway-uconsole.sh | bash
+
+# Option 2: Clone and run locally
+git clone https://github.com/GeoDerp/uconsole-cm5-opensuse-microos.git
+cd uconsole-cm5-opensuse-microos
+./scripts/install-sway-uconsole.sh
+```
+
+After installation, **reboot** to activate the new snapshot with Sway packages.
+
+### Post-Install Configuration
+
+1. Start Sway manually after reboot:
+   ```bash
+   sway
+   ```
+
+2. Or configure auto-start on TTY1 by adding to `~/.bash_profile`:
+   ```bash
+   if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+       exec sway
+   fi
+   ```
+
+### Key Bindings
+
+The configuration uses **Alt** as the modifier key for compatibility with uConsole's compact keyboard:
+
+| Key Binding | Action |
+|-------------|--------|
+| `Alt+Return` | Open terminal (kitty) |
+| `Alt+d` | Open app launcher (wofi) |
+| `Alt+Shift+q` | Close focused window |
+| `Alt+h/j/k/l` | Focus left/down/up/right |
+| `Alt+Shift+h/j/k/l` | Move window left/down/up/right |
+| `Alt+1-0` | Switch to workspace 1-10 |
+| `Alt+Shift+1-0` | Move window to workspace 1-10 |
+| `Alt+[` | Decrease brightness |
+| `Alt+]` | Increase brightness |
+| `Alt+Shift+[` | Decrease volume |
+| `Alt+Shift+]` | Increase volume |
+| `Alt+b` | Toggle waybar |
+| `Alt+f` | Fullscreen |
+| `Alt+v` | Split vertical |
+| `Alt+g` | Split horizontal |
+| `Alt+Shift+c` | Reload sway config |
+| `Alt+Shift+e` | Exit sway |
+
+### Lock Screen
+
+The screen locks automatically after 5 minutes of inactivity and on boot. To lock manually:
+
+```bash
+swaylock
+```
+
+### Optional: wpgtk Dynamic Theming
+
+For dynamic color themes based on your wallpaper, install wpgtk:
+
+```bash
+./scripts/install-sway-uconsole.sh --with-wpgtk
+```
+
+Then set a wallpaper:
+```bash
+wpg -s ~/Pictures/wallpaper.jpg
+sway reload
+```
 
 ## License
 
