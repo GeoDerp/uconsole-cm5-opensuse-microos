@@ -187,6 +187,48 @@ download_configs() {
     log_success "All configuration files downloaded"
 }
 
+# Setup default wallpaper
+setup_wallpaper() {
+    log_info "Setting up default wallpaper..."
+    
+    # Create a simple gradient wallpaper if no wallpaper exists
+    if [[ ! -f "$HOME/.config/sway/wallpaper.jpg" ]]; then
+        if command -v magick &> /dev/null || command -v convert &> /dev/null; then
+            # Create a dark gradient wallpaper matching the theme
+            log_info "Creating default gradient wallpaper..."
+            local convert_cmd="convert"
+            command -v magick &> /dev/null && convert_cmd="magick"
+            $convert_cmd -size 1280x720 gradient:'#12100d-#2a2520' "$HOME/.config/sway/wallpaper.jpg" 2>/dev/null
+            if [[ -f "$HOME/.config/sway/wallpaper.jpg" ]]; then
+                log_success "Default wallpaper created"
+            else
+                log_warn "Could not create wallpaper - using solid color fallback"
+            fi
+        else
+            log_warn "ImageMagick not available - sway will use solid color background"
+            log_info "Install ImageMagick later or add your own wallpaper to ~/.config/sway/wallpaper.jpg"
+        fi
+    else
+        log_success "Wallpaper already exists"
+    fi
+    
+    # If user provides a custom wallpaper, resize it for the uConsole display
+    if [[ -n "$CUSTOM_WALLPAPER" && -f "$CUSTOM_WALLPAPER" ]]; then
+        log_info "Resizing custom wallpaper for uConsole display (1280x720)..."
+        if command -v magick &> /dev/null || command -v convert &> /dev/null; then
+            local convert_cmd="convert"
+            command -v magick &> /dev/null && convert_cmd="magick"
+            $convert_cmd "$CUSTOM_WALLPAPER" -resize 1280x720^ -gravity center -extent 1280x720 \
+                "$HOME/.config/sway/wallpaper.jpg" 2>/dev/null
+            log_success "Custom wallpaper installed and resized"
+        else
+            cp "$CUSTOM_WALLPAPER" "$HOME/.config/sway/wallpaper.jpg"
+            log_warn "Wallpaper copied but not resized (ImageMagick not available)"
+            log_info "Large wallpapers may cause display issues - consider resizing to 1280x720"
+        fi
+    fi
+}
+
 # Optional: Install uv and wpgtk for dynamic theming
 setup_wpgtk() {
     echo ""
@@ -380,6 +422,7 @@ main() {
     
     install_packages
     download_configs
+    setup_wallpaper
     setup_seatd
     setup_autologin
     setup_wpgtk

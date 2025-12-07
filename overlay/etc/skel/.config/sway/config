@@ -21,14 +21,15 @@ set $inactive #6C654D
 set $urgent #3A4542
 
 ### Output - uConsole DSI display rotated for landscape
+# Note: Use $HOME instead of ~ for proper path expansion in output blocks
 output DSI-1 {
     mode 720x1280
     transform 90
     scale 1
-    bg ~/.config/sway/wallpaper.jpg fill
+    bg $HOME/.config/sway/wallpaper.jpg fill
 }
 
-output * bg ~/.config/sway/wallpaper.jpg fill
+output * bg $HOME/.config/sway/wallpaper.jpg fill
 
 ### Swaylock configuration (visible indicator ring)
 set $lock swaylock -f \
