@@ -2490,6 +2490,7 @@
 						panel@0 {
 							phandle = <0x11a>;
 							iovcc-supply = <0x10f>;
+							vci-supply = <0x10f>;  /* Use same display-vcc regulator for VCI */
 							rotation = <0x5a>;
 							backlight = <0x10e>;
 							reset-gpio = <0x2b 0x08 0x01>;
@@ -2954,7 +2955,9 @@
 		status = "okay";
 		/* GPIO 0 = SDA, GPIO 1 = SCL, both open-drain active-high */
 		gpios = <0x2b 0x00 0x06>, <0x2b 0x01 0x06>;  /* rp1_gpio 0/1, GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN (0x06) */
-		i2c-gpio,delay-us = <2>;
+		i2c-gpio,delay-us = <5>;  /* Increased from 2us for more reliable communication */
+		sda-open-drain;
+		scl-open-drain;
 		#size-cells = <0x00>;
 		#address-cells = <0x01>;
 		phandle = <0x106>;
