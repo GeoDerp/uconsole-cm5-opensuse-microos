@@ -2964,13 +2964,15 @@
 
 		pmic@34 {
 			phandle = <0x113>;
-			irq-gpios = <0x2b 0x02 0x00>;
-			interrupts = <0x02 0x08>;
-			interrupt-parent = <0x2b>;
+			/* IRQ disabled - causes probe failure with RP1 GPIO
+			 * irq-gpios = <0x2b 0x02 0x00>;
+			 * interrupts = <0x02 0x08>;
+			 * interrupt-parent = <0x2b>;
+			 * #interrupt-cells = <0x01>;
+			 * interrupt-controller;
+			 */
 			reg = <0x34>;
 			compatible = "x-powers,axp221";
-			#interrupt-cells = <0x01>;
-			interrupt-controller;
 
 			ac_power_supply {
 				phandle = <0x119>;

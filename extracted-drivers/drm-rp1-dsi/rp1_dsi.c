@@ -113,6 +113,9 @@ static void rp1dsi_pipe_update(struct drm_simple_display_pipe *pipe,
 	struct drm_gem_dma_object *dma_obj = gem ? to_drm_gem_dma_obj(gem) : NULL;
 	bool can_update = fb && dma_obj && dsi && dsi->pipe_enabled;
 
+	dev_dbg(&dsi->pdev->dev, "pipe_update: fb=%p dma_obj=%p pipe_enabled=%d can_update=%d\n",
+		fb, dma_obj, dsi ? dsi->pipe_enabled : -1, can_update);
+
 	/* (Re-)start DSI,DMA where required; and update FB address */
 	if (can_update) {
 		if (!dsi->dma_running || fb->format->format != dsi->cur_fmt) {
@@ -121,10 +124,14 @@ static void rp1dsi_pipe_update(struct drm_simple_display_pipe *pipe,
 				dsi->dma_running = false;
 			}
 			if (!dsi->dma_running) {
+				dev_info(&dsi->pdev->dev, "pipe_update: starting DMA, format=0x%x\n",
+					 fb->format->format);
 				rp1dsi_dma_setup(dsi,
 						 fb->format->format, dsi->display_format,
 						&pipe->crtc.state->adjusted_mode);
 				dsi->dma_running = true;
+				dev_info(&dsi->pdev->dev, "pipe_update: DMA started, dma_running=%d\n",
+					 dsi->dma_running);
 			}
 			dsi->cur_fmt  = fb->format->format;
 			drm_crtc_vblank_on(&pipe->crtc);
@@ -157,13 +164,16 @@ static void rp1dsi_encoder_enable(struct drm_encoder *encoder)
 {
 	struct rp1_dsi *dsi = encoder_to_rp1_dsi(encoder);
 
+	dev_info(&dsi->pdev->dev, "rp1dsi_encoder_enable: switching to video mode\n");
 	/* Put DSI into video mode before starting video */
 	rp1dsi_dsi_set_cmdmode(dsi, 0);
 
 	/* Start DMA -> DPI */
 	dsi->pipe_enabled = true;
 	dsi->cur_fmt = 0xdeadbeef;
+	dev_info(&dsi->pdev->dev, "rp1dsi_encoder_enable: calling pipe_update\n");
 	rp1dsi_pipe_update(&dsi->pipe, 0);
+	dev_info(&dsi->pdev->dev, "rp1dsi_encoder_enable: done, pipe_enabled=%d\n", dsi->pipe_enabled);
 }
 
 static void rp1dsi_encoder_disable(struct drm_encoder *encoder)
