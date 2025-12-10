@@ -24,6 +24,10 @@ REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "=== Deploying uConsole CM5 configuration to $TARGET ==="
 
+# Install required packages
+echo "Installing required packages..."
+$SSH_CMD $TARGET "sudo transactional-update --non-interactive pkg install i2c-tools" || echo "Note: Package install may require reboot to take effect"
+
 # Deploy overlay files
 echo "Deploying configuration files..."
 
@@ -45,6 +49,30 @@ $SSH_CMD $TARGET "sudo cp /tmp/uconsole-backlight.service /etc/systemd/system/ &
 # Deploy init script
 $SCP_CMD "$REPO_DIR/overlay/usr/local/bin/uconsole-backlight-init.sh" $TARGET:/tmp/
 $SSH_CMD $TARGET "sudo cp /tmp/uconsole-backlight-init.sh /usr/local/bin/ && sudo chmod +x /usr/local/bin/uconsole-backlight-init.sh"
+
+# Deploy AXP221 power management scripts (for proper shutdown)
+echo "Deploying AXP221 power management..."
+$SCP_CMD "$REPO_DIR/overlay/usr/local/sbin/axp221-poweroff.sh" $TARGET:/tmp/
+$SCP_CMD "$REPO_DIR/overlay/usr/local/sbin/axp221-configure-pek.sh" $TARGET:/tmp/
+$SCP_CMD "$REPO_DIR/overlay/etc/systemd/system/axp221-poweroff.service" $TARGET:/tmp/
+$SCP_CMD "$REPO_DIR/overlay/etc/systemd/system/axp221-configure-pek.service" $TARGET:/tmp/
+$SSH_CMD $TARGET "sudo mkdir -p /usr/local/sbin && \
+    sudo cp /tmp/axp221-poweroff.sh /tmp/axp221-configure-pek.sh /usr/local/sbin/ && \
+    sudo chmod +x /usr/local/sbin/axp221-*.sh && \
+    sudo cp /tmp/axp221-poweroff.service /tmp/axp221-configure-pek.service /etc/systemd/system/ && \
+    sudo systemctl daemon-reload && \
+    sudo systemctl enable axp221-poweroff.service axp221-configure-pek.service"
+
+# Deploy btrfsmaintenance timer overrides (prevent display underflow at boot)
+echo "Deploying btrfs timer overrides..."
+for timer in btrfs-scrub btrfs-balance btrfs-trim btrfs-defrag; do
+    if [ -f "$REPO_DIR/overlay/etc/systemd/system/${timer}.timer.d/uconsole-delay-boot.conf" ]; then
+        $SCP_CMD "$REPO_DIR/overlay/etc/systemd/system/${timer}.timer.d/uconsole-delay-boot.conf" $TARGET:/tmp/
+        $SSH_CMD $TARGET "sudo mkdir -p /etc/systemd/system/${timer}.timer.d && \
+            sudo cp /tmp/uconsole-delay-boot.conf /etc/systemd/system/${timer}.timer.d/"
+    fi
+done
+$SSH_CMD $TARGET "sudo systemctl daemon-reload"
 
 # Deploy extraconfig.txt to boot partition
 echo "Deploying boot configuration..."
