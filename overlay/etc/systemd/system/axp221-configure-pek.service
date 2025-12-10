@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure AXP221 PMIC Power Button
+Documentation=https://github.com/GeoDerp/uconsole-cm5-opensuse-microos
+# Run early at boot
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/axp221-configure-pek.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

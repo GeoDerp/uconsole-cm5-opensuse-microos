@@ -74,6 +74,15 @@ for timer in btrfs-scrub btrfs-balance btrfs-trim btrfs-defrag; do
 done
 $SSH_CMD $TARGET "sudo systemctl daemon-reload"
 
+# Deploy logind power button configuration
+echo "Deploying power button configuration..."
+if [ -f "$REPO_DIR/overlay/etc/systemd/logind.conf.d/uconsole-power.conf" ]; then
+    $SCP_CMD "$REPO_DIR/overlay/etc/systemd/logind.conf.d/uconsole-power.conf" $TARGET:/tmp/
+    $SSH_CMD $TARGET "sudo mkdir -p /etc/systemd/logind.conf.d && \
+        sudo cp /tmp/uconsole-power.conf /etc/systemd/logind.conf.d/ && \
+        sudo systemctl restart systemd-logind"
+fi
+
 # Deploy extraconfig.txt to boot partition
 echo "Deploying boot configuration..."
 $SCP_CMD "$REPO_DIR/overlay/boot/efi/extraconfig.txt" $TARGET:/tmp/

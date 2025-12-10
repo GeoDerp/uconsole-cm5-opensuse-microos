@@ -37,6 +37,7 @@ struct ocp8178_backlight {
 	struct gpio_desc *gpiod;
 	int def_value;
 	int current_value;
+	bool initialized;  /* Track if 1-wire mode has been entered */
 };
 
 #define DETECT_DELAY 200
@@ -50,6 +51,8 @@ struct ocp8178_backlight {
 #define HIGH_BIT_HIGH_TIME 50
 #define HIGH_BIT_LOW_TIME 10
 #define MAX_BRIGHTNESS_VALUE 9
+/* Time in ms before chip exits 1-wire mode if no commands sent */
+#define ONEWARE_KEEPALIVE_TIME 2000
 
 static void entry_1wire_mode(struct ocp8178_backlight *gbl)
 {
@@ -133,7 +136,7 @@ unsigned char ocp8178_bl_table[MAX_BRIGHTNESS_VALUE+1] = {0, 1, 4, 8, 12, 16, 20
 static int ocp8178_update_status(struct backlight_device *bl)
 {
 	struct ocp8178_backlight *gbl = bl_get_data(bl);
-	int brightness = bl->props.brightness, i;
+	int brightness = bl->props.brightness;
 
 	if (bl->props.power != FB_BLANK_UNBLANK ||
 	    bl->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
@@ -142,10 +145,16 @@ static int ocp8178_update_status(struct backlight_device *bl)
 	if(brightness > MAX_BRIGHTNESS_VALUE)
 		brightness = MAX_BRIGHTNESS_VALUE;
 
-	for(i = 0; i < 2; i++) {
+	/* Only do full 1-wire init on first use or when turning on from off */
+	if (!gbl->initialized || (gbl->current_value == 0 && brightness > 0)) {
 		entry_1wire_mode(gbl);
-		write_byte(gbl, ocp8178_bl_table[brightness]);
+		gbl->initialized = true;
 	}
+
+	/* Send brightness command (send twice for reliability) */
+	write_byte(gbl, ocp8178_bl_table[brightness]);
+	write_byte(gbl, ocp8178_bl_table[brightness]);
+
 	gbl->current_value = brightness;
 
 	return 0;
@@ -251,11 +260,20 @@ static int ocp8178_probe(struct platform_device *pdev)
 
 static int ocp8178_suspend(struct platform_device *pdev, pm_message_t state)
 {
+	struct backlight_device *bl = platform_get_drvdata(pdev);
+	struct ocp8178_backlight *gbl = bl_get_data(bl);
+	
+	/* Mark as needing re-init on resume */
+	gbl->initialized = false;
 	return 0;
 }
 
 static int ocp8178_resume(struct platform_device *pdev)
 {
+	struct backlight_device *bl = platform_get_drvdata(pdev);
+	
+	/* Re-initialize backlight on resume */
+	backlight_update_status(bl);
 	return 0;
 }
 

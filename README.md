@@ -15,6 +15,7 @@ This repository contains device tree overlays, drivers, and scripts to run the C
 | Battery | ✅ Working | AXP221 PMIC, full monitoring and charging |
 | PMIC | ✅ Working | AXP221 on i2c-13 via `i2c-gpio` bit-banging |
 | WiFi | ✅ Working | BCM43455 via `brcmfmac` |
+| Power Off | ⚠️ Workaround | Requires I2C-based poweroff script (see below) |
 
 ## Quick Start
 
@@ -206,7 +207,10 @@ There's a clock reparent warning during probe (`failed to reparent clk_audio_out
 │   ├── etc/modprobe.d/uconsole.conf
 │   ├── etc/modules-load.d/uconsole.conf
 │   ├── etc/systemd/system/uconsole-backlight.service
-│   └── usr/local/bin/uconsole-backlight-init.sh
+│   ├── etc/systemd/system/axp221-poweroff.service
+│   ├── etc/systemd/system/axp221-configure-pek.service
+│   ├── usr/local/bin/uconsole-backlight-init.sh
+│   └── usr/local/sbin/axp221-*.sh
 ├── overlays/                   # Device tree overlays
 │   ├── usb-vbus-hog.dts       # USB VBUS GPIO enable
 │   ├── uconsole-audio.dts     # Audio card configuration
@@ -309,6 +313,8 @@ If you see only the backlight but no display content after boot:
    sudo dmesg | grep -i "deferred probe timeout"
    # If you see this for drm-rp1-dsi, the panel module may not have loaded in time
    ```
+   
+   **Note**: A 60-second boot delay is expected due to a circular dependency between the DSI controller and panel in the device tree. The kernel's `fw_devlink` defers probing until `deferred_probe_timeout` expires. To reduce this delay, set `deferred_probe_timeout=5` in `/etc/default/grub` and regenerate the GRUB config.
 
 3. Check driver loading:
    ```bash
@@ -366,8 +372,34 @@ The uConsole may not boot when running on battery alone (without USB power conne
 
 **Known PMIC registers affected**:
 - `AXP20X_VBUS_IPSOUT_MGMT (0x30)` - VBUS/IPSOUT power path
-- `AXP20X_OFF_CTRL (0x32)` - Power-off control (bit 3 = battery power enable)
-- `AXP20X_PEK_KEY (0x36)` - Power Enable Key configuration
+- `AXP20X_OFF_CTRL (0x32)` - Power-off control (bit 3 = battery power enable, bit 7 = power off)
+- `AXP20X_PEK_KEY (0x36)` - Power Enable Key configuration (bits 0-1 = shutdown timeout)
+
+### Shutdown/Reboot Doesn't Power Off Device
+
+If `shutdown` or `reboot` commands halt the system but the power LED stays on:
+
+**Cause**: The AXP221 PMIC IRQ is disabled in the device tree (to fix probe failures with RP1 GPIO). This also disables the kernel's normal power-off handler.
+
+**Solution**: Install the I2C-based poweroff scripts from the overlay directory:
+
+1. Copy the scripts to the device:
+   ```bash
+   sudo install -m 755 overlay/usr/local/sbin/axp221-poweroff.sh /usr/local/sbin/
+   sudo install -m 755 overlay/usr/local/sbin/axp221-configure-pek.sh /usr/local/sbin/
+   sudo install -m 644 overlay/etc/systemd/system/axp221-*.service /etc/systemd/system/
+   sudo systemctl enable axp221-poweroff.service axp221-configure-pek.service
+   ```
+
+2. Configure the hardware power button (4-second hold to force power off):
+   ```bash
+   sudo /usr/local/sbin/axp221-configure-pek.sh
+   ```
+
+3. For manual power off via I2C:
+   ```bash
+   sudo i2cset -y 13 0x34 0x32 0x80
+   ```
 
 ### No Network After Boot
 

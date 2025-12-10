@@ -1,0 +1,15 @@
+[Unit]
+Description=AXP221 PMIC Power Off
+Documentation=https://github.com/GeoDerp/uconsole-cm5-opensuse-microos
+# Run very late in shutdown, after filesystems are synced
+DefaultDependencies=no
+Before=poweroff.target halt.target shutdown.target
+After=final.target umount.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/axp221-poweroff.sh
+TimeoutStartSec=10
+
+[Install]
+WantedBy=poweroff.target halt.target

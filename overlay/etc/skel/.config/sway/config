@@ -164,6 +164,19 @@ bindsym XF86AudioPrev exec playerctl previous
 bindsym Print exec grim -g "$(slurp)" - | wl-copy
 bindsym $mod+Print exec grim - | wl-copy
 
+### uConsole Fn key shortcuts
+# These match the ClockworkPI keyboard layout Fn key combinations
+# Fn+Exit (Escape) = Lock screen
+bindsym Mod1+Escape exec $lock
+# Fn+Del = Sleep/Suspend (if supported)
+bindsym XF86Sleep exec systemctl suspend
+# Fn+Ins = Screenshot (Print key)
+# Already handled above with Print key
+# Fn+Arrow keys = Page navigation (handled by keyboard firmware)
+# Fn+[ and Fn+] = Brightness (handled above with Alt+bracket)
+
+# Power button handling (via systemd-logind, configured in logind.conf.d)
+
 ### Window colors - from wpgtk
 client.focused          $accent   $bg $fg $accent   $accent
 client.focused_inactive $inactive $bg $fg $inactive $inactive
