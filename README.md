@@ -478,6 +478,26 @@ The configuration uses **Alt** as the modifier key for compatibility with uConso
 | `Alt+g` | Split horizontal |
 | `Alt+Shift+c` | Reload sway config |
 | `Alt+Shift+e` | Exit sway |
+| `Alt+Escape` | Lock screen |
+| `Alt+Shift+p` | Power off (with confirmation) |
+| `Alt+Shift+s` | Suspend |
+
+#### uConsole Fn Key Notes
+
+The uConsole keyboard firmware handles Fn key combinations internally. Some key combinations:
+
+| Fn + Key | Action |
+|----------|--------|
+| `Fn+[` / `Fn+]` | Brightness down/up (via XF86 keys) |
+| `Fn+Volume` | Mute toggle |
+| `Fn+o` | Print screen |
+| `Fn+i` | Insert |
+| `Fn+h/j/k/u` | Home/End/PageDown/PageUp |
+| `Fn+Esc` | **Keyboard lock** (internal, NOT passed to Linux) |
+
+> **Note**: `Fn+Esc` locks the keyboard at the firmware level and does NOT send an event to Linux. Use `Alt+Escape` for lock screen instead.
+
+See `docs/CM5-UCONSOLE-KNOWLEDGE-BASE.md` for complete Fn key reference.
 
 ### Lock Screen
 
@@ -485,6 +505,7 @@ The screen locks automatically after 5 minutes of inactivity and on boot. To loc
 
 ```bash
 swaylock
+# Or use: Alt+Escape
 ```
 
 ### Optional: wpgtk Dynamic Theming

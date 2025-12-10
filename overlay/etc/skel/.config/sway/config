@@ -148,34 +148,51 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-### uConsole hardware keys
+### uConsole Hardware Keys
+# The uConsole keyboard firmware sends XF86 consumer keys for Fn combinations.
+# See docs/CM5-UCONSOLE-KNOWLEDGE-BASE.md for complete Fn key reference.
+
+# Brightness (Fn+[ and Fn+] send XF86MonBrightness*)
 bindsym XF86MonBrightnessUp exec brightnessctl -q set +1
 bindsym XF86MonBrightnessDown exec brightnessctl -q set 1-
-# Alt+bracket brightness controls for uConsole keyboard
+
+# Alt+bracket brightness controls (alternative without Fn key)
 bindsym Mod1+bracketleft exec brightnessctl -q set 1-
 bindsym Mod1+bracketright exec brightnessctl -q set +1
+
+# Volume (Fn+Volume sends XF86AudioMute)
 bindsym XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
 bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
 bindsym XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 bindsym XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+
+# Media controls
 bindsym XF86AudioPlay exec playerctl play-pause
 bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
+
+# Screenshot (Fn+o sends Print key)
 bindsym Print exec grim -g "$(slurp)" - | wl-copy
 bindsym $mod+Print exec grim - | wl-copy
 
-### uConsole Fn key shortcuts
-# These match the ClockworkPI keyboard layout Fn key combinations
-# Fn+Exit (Escape) = Lock screen
+### uConsole-specific Shortcuts
+# Note: Fn+Esc is "keyboard lock" in firmware, NOT passed to Linux.
+# Use Alt+Escape for lock screen instead.
+
+# Lock screen (Alt+Escape - use this instead of Fn+Esc)
 bindsym Mod1+Escape exec $lock
-# Fn+Del = Sleep/Suspend (if supported)
+
+# Suspend (XF86Sleep if power button sends it, or use Alt+Sleep combo)
 bindsym XF86Sleep exec systemctl suspend
-# Fn+Ins = Screenshot (Print key)
-# Already handled above with Print key
-# Fn+Arrow keys = Page navigation (handled by keyboard firmware)
-# Fn+[ and Fn+] = Brightness (handled above with Alt+bracket)
+
+# Poweroff shortcut (Alt+Shift+p) - useful since power button GPIO may not work
+bindsym $mod+$alt+p exec swaynag -t warning -m 'Power off?' -B 'Power Off' 'systemctl poweroff'
+
+# Suspend shortcut (Alt+Shift+s)
+bindsym $mod+$alt+s exec systemctl suspend
 
 # Power button handling (via systemd-logind, configured in logind.conf.d)
+# If GPIO issues prevent power button from working, use the shortcuts above.
 
 ### Window colors - from wpgtk
 client.focused          $accent   $bg $fg $accent   $accent

@@ -92,20 +92,32 @@ sudo reboot
 
 | Key Combo | Action |
 |-----------|--------|
-| Alt+Enter | Open terminal (foot) |
+| Alt+Enter | Open terminal (kitty/foot) |
 | Alt+d | Open app launcher (wofi) |
 | Alt+Shift+q | Close window |
-| Alt+Shift+r | Reload sway config |
+| Alt+Shift+c | Reload sway config |
+| Alt+Shift+e | Exit sway |
 | Alt+h/j/k/l | Focus left/down/up/right |
-| Alt+1-5 | Switch workspace |
-| Alt+Shift+1-5 | Move window to workspace |
+| Alt+1-0 | Switch workspace |
+| Alt+Shift+1-0 | Move window to workspace |
 | Alt+f | Toggle fullscreen |
 | Alt+Shift+Space | Toggle floating |
 | Alt+r | Enter resize mode |
 | Alt+] | Brightness up |
 | Alt+[ | Brightness down |
-| Print | Screenshot |
-| Mod4+l | Lock screen |
+| Alt+Escape | Lock screen |
+| Alt+Shift+p | Power off (with confirmation) |
+| Alt+Shift+s | Suspend |
+| Print | Screenshot (select area) |
+| Alt+Print | Screenshot (full screen) |
+
+### uConsole Fn Key Notes
+
+The uConsole keyboard firmware handles Fn combinations internally:
+- `Fn+[`/`Fn+]` → Brightness (via XF86 keys)
+- `Fn+Esc` → **Keyboard lock** (internal, NOT passed to Linux - use `Alt+Escape` instead)
+- `Fn+o` → Print screen
+- See `docs/CM5-UCONSOLE-KNOWLEDGE-BASE.md` for complete reference.
 
 ## Waybar Modules
 

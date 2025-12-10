@@ -50,3 +50,6 @@ __pycache__/
 
 # Temporary files
 /tmp/
+
+# Documentation
+docs/CM5-UCONSOLE-KNOWLEDGE-BASE.md
