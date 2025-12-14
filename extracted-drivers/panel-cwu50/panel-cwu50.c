@@ -618,9 +618,9 @@ static int cwu50_prepare(struct drm_panel *panel)
 		dev_info(ctx->dev, "old panel, cycling the reset pin\n");
 		/* Cycle RESX (Hardware Reset) */
 		gpiod_set_value_cansleep(ctx->id_gpio, 1);
-		msleep(10);
+		msleep(50);
 		gpiod_set_value_cansleep(ctx->id_gpio, 0);
-		msleep(5);
+		msleep(20);
 	}
 
 	/* Enabe tearing mode: send TE (tearing effect) at VBLANK */
