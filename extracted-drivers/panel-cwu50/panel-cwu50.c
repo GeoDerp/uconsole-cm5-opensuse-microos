@@ -633,7 +633,7 @@ static int cwu50_prepare(struct drm_panel *panel)
 	if (ctx->is_new_panel)
 		cwu50_init_sequence2(ctx);
 	else
-		cwu50_init_sequence(ctx);
+		cwu50_init_sequence2(ctx); // Experiment: Force New Init on Old Panel hardware
 
 	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
 	if (ret) {
