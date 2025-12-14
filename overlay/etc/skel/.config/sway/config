@@ -62,8 +62,8 @@ input "7855:36:ClockworkPI_uConsole_Keyboard" {
 }
 
 input "7855:36:ClockworkPI_uConsole_Mouse" {
-    accel_profile flat
-    pointer_accel -0.3
+    accel_profile adaptive
+    # pointer_accel -0.3
     scroll_factor 1.0
 }
 

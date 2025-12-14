@@ -49,22 +49,28 @@ fi
 echo "Building kernel modules on target (if kernel headers present)"
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$DEST_USER@$DEST_HOST" <<'REMOTE'
 set -euo pipefail
+set -x
 cd /tmp/uconsole-drivers
 KVER=$(uname -r)
 if [ ! -d /lib/modules/$KVER/build ]; then
   echo "Kernel build symlink not present at /lib/modules/$KVER/build. Building will likely fail unless kernel-devel is installed." >&2
 fi
-for d in extracted-drivers/*; do
+for d in *; do
   if [ -d "$d" ]; then
     if [ -f "$d/Makefile" ]; then
       echo "Building driver in $d"
       pushd "$d" >/dev/null
+      echo "PWD: $(pwd)"
+      ls -l
       # prefer building with kernel build system: make -C /lib/modules/<kver>/build M=$(pwd) modules
-      sudo make -C /lib/modules/$KVER/build M=$(pwd) modules || true
+      sudo make -C /lib/modules/$KVER/build M=$(pwd) modules
       # install modules if created
       if ls *.ko >/dev/null 2>&1; then
         sudo mkdir -p /lib/modules/$KVER/extra
         sudo cp -v *.ko /lib/modules/$KVER/extra || true
+        # Also copy to /var/lib/modules-overlay for MicroOS persistence
+        sudo mkdir -p /var/lib/modules-overlay
+        sudo cp -v *.ko /var/lib/modules-overlay/ || true
       fi
       popd >/dev/null
     fi
@@ -80,8 +86,9 @@ for mod in ocp8178_bl panel-cwd686 panel-cwu50 axp20x_ac_power axp20x_battery; d
 done
 
 if [ "$NO_REBOOT" = false ]; then
-  echo "Rebooting target to finalize module install"
-  ssh -i "$SSH_KEY" "$DEST_USER@$DEST_HOST" 'sudo systemctl reboot'
+  echo "Skipping reboot for debug"
+  # echo "Rebooting target to finalize module install"
+  # ssh -i "$SSH_KEY" "$DEST_USER@$DEST_HOST" 'sudo systemctl reboot'
 fi
 
 echo "Done."

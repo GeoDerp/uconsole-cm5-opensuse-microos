@@ -1,10 +1,9 @@
 [Unit]
 Description=AXP221 PMIC Power Off
 Documentation=https://github.com/GeoDerp/uconsole-cm5-opensuse-microos
-# Run very late in shutdown, after filesystems are synced
 DefaultDependencies=no
-Before=poweroff.target halt.target shutdown.target
-After=final.target umount.target
+Before=poweroff.target halt.target
+After=umount.target systemd-remount-fs.service
 
 [Service]
 Type=oneshot

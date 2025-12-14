@@ -24,7 +24,7 @@ struct cwu50 {
 };
 
 static const struct drm_display_mode default_mode = {
-	.clock = 61020,
+	.clock = 58000,
 	.hdisplay = 720,
 	.hsync_start = 720 + 30,
 	.hsync_end = 720+ 30 + 15,
@@ -265,17 +265,17 @@ static void cwu50_init_sequence(struct cwu50 *ctx)
 static int cwu50_init_sequence2(struct cwu50 *ctx)
 {
 	struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
-
+	int err;
 	dcs_write_seq(0xE0,0x00);
 
-	//--- PASSWORD	----//
+	//--- PASSWORD	----
 	dcs_write_seq(0xE1,0x93);
 	dcs_write_seq(0xE2,0x65);
 	dcs_write_seq(0xE3,0xF8);
 	dcs_write_seq(0x80,0x03);//03:4lane 02:3lane 01:2lane
 
 
-	//--- Page1  ----//
+	//--- Page1  ----
 	dcs_write_seq(0xE0,0x01);
 
 	//Set VCOM
@@ -296,20 +296,20 @@ static int cwu50_init_sequence2(struct cwu50 *ctx)
 	dcs_write_seq(0x24,0xFE);
 
 	//Set Panel
-	dcs_write_seq(0x37,0x09);	//SS=1,BGR=1
+	dcs_write_seq(0x37,0x09); //SS=1,BGR=1
 
 	//SET RGBCYC
-	dcs_write_seq(0x38,0x04);	//JDT=100 column inversion
-	dcs_write_seq(0x39,0x08);	//RGB_N_EQ1
-	dcs_write_seq(0x3A,0x12);	//RGB_N_EQ2
-	dcs_write_seq(0x3C,0x78);	//SET EQ3 for TE_H
+	dcs_write_seq(0x38,0x04); //JDT=100 column inversion
+	dcs_write_seq(0x39,0x08); //RGB_N_EQ1
+	dcs_write_seq(0x3A,0x12); //RGB_N_EQ2
+	dcs_write_seq(0x3C,0x78); //SET EQ3 for TE_H
 	dcs_write_seq(0x3D,0xFF);
 	dcs_write_seq(0x3E,0xFF);
 	dcs_write_seq(0x3F,0xFF);
 
 	//Set TCON
-	dcs_write_seq(0x40,0x04);	//RSO 04h=720, 05h=768, 06h=800
-	dcs_write_seq(0x41,0xA0);	//LN=640->1280 line
+	dcs_write_seq(0x40,0x04); //RSO 04h=720, 05h=768, 06h=800
+	dcs_write_seq(0x41,0xA0); //LN=640->1280 line
 	dcs_write_seq(0x42,0x7F);  //SLT=12.7us
 	dcs_write_seq(0x43,0x10);  //VFP
 	dcs_write_seq(0x44,0x17);  //VBP =24
@@ -317,16 +317,16 @@ static int cwu50_init_sequence2(struct cwu50 *ctx)
 
 	//dcs_write_seq(0x4A,0x35);//BIST MODE 35:AUTO
 
-	//--- power voltage  ----//
-	dcs_write_seq(0x55,0x02);	//DCDCM=0011, JD5001
+	//--- power voltage  ----
+	dcs_write_seq(0x55,0x02); //DCDCM=0011, JD5001
 	//dcs_write_seq(0x56,0x01);
 	dcs_write_seq(0x57,0x69);
 	//dcs_write_seq(0x58,0x0A);
-	dcs_write_seq(0x59,0x2A);	//VCL = -2.7V, AVEE=-5.5V
-	dcs_write_seq(0x5A,0x1A);	//VGH = +12.2V
-	dcs_write_seq(0x5B,0x1A);	//VGL = -12.2V
+	dcs_write_seq(0x59,0x2A); //VCL = -2.7V, AVEE=-5.5V
+	dcs_write_seq(0x5A,0x1A); //VGH = +12.2V
+	dcs_write_seq(0x5B,0x1A); //VGL = -12.2V
 
-	//--- Gamma2.2	----//	//G2.2	  //G2.5
+	//--- Gamma2.2	----	//G2.2	  //G2.5
 	dcs_write_seq(0x5D,0x7F);  //0x7F	//0x7F
 	dcs_write_seq(0x5E,0x67);  //0x67	//0x65
 	dcs_write_seq(0x5F,0x58);  //0x58	//0x55
@@ -371,100 +371,100 @@ static int cwu50_init_sequence2(struct cwu50 *ctx)
 	dcs_write_seq(0xE0,0x02);
 
 	//GIP_L Pin mapping
-	dcs_write_seq(0x00,0x5F);	//GCL
-	dcs_write_seq(0x01,0x5F);	//VSS->VGL
-	dcs_write_seq(0x02,0x44);	//CLK1->CKV0
-	dcs_write_seq(0x03,0x46);	//CKK3->CKV2
-	dcs_write_seq(0x04,0x48);	//CLK5->CKV4
-	dcs_write_seq(0x05,0x4A);	//CLK7->CKV6
-	dcs_write_seq(0x06,0x5F);	//VGL
-	dcs_write_seq(0x07,0x5F);	//VGL
-	dcs_write_seq(0x08,0x5F);	//VGL
-	dcs_write_seq(0x09,0x5F);	//NC
-	dcs_write_seq(0x0A,0x5F);	//NC
-	dcs_write_seq(0x0B,0x5F);	//NC //
-	dcs_write_seq(0x0C,0x5F);	//NC
-	dcs_write_seq(0x0D,0x5F);	//NC
-	dcs_write_seq(0x0E,0x5F);	//NC //
-	dcs_write_seq(0x0F,0x5F);	//NC
-	dcs_write_seq(0x10,0x5F);	//NC
-	dcs_write_seq(0x11,0x5F);	//NC //
-	dcs_write_seq(0x12,0x5E);	//GCH
-	dcs_write_seq(0x13,0x5E);	//VDD->VGH
-	dcs_write_seq(0x14,0x40);	//STV1
-	dcs_write_seq(0x15,0x42);	//STV3
+	dcs_write_seq(0x00,0x5F); //GCL
+	dcs_write_seq(0x01,0x5F); //VSS->VGL
+	dcs_write_seq(0x02,0x44); //CLK1->CKV0
+	dcs_write_seq(0x03,0x46); //CKK3->CKV2
+	dcs_write_seq(0x04,0x48); //CLK5->CKV4
+	dcs_write_seq(0x05,0x4A); //CLK7->CKV6
+	dcs_write_seq(0x06,0x5F); //VGL
+	dcs_write_seq(0x07,0x5F); //VGL
+	dcs_write_seq(0x08,0x5F); //VGL
+	dcs_write_seq(0x09,0x5F); //NC
+	dcs_write_seq(0x0A,0x5F); //NC
+	dcs_write_seq(0x0B,0x5F); //NC //
+	dcs_write_seq(0x0C,0x5F); //NC
+	dcs_write_seq(0x0D,0x5F); //NC
+	dcs_write_seq(0x0E,0x5F); //NC //
+	dcs_write_seq(0x0F,0x5F); //NC
+	dcs_write_seq(0x10,0x5F); //NC
+	dcs_write_seq(0x11,0x5F); //NC //
+	dcs_write_seq(0x12,0x5E); //GCH
+	dcs_write_seq(0x13,0x5E); //VDD->VGH
+	dcs_write_seq(0x14,0x40); //STV1
+	dcs_write_seq(0x15,0x42); //STV3
 
 	//GIP_R Pin mapping
-	dcs_write_seq(0x16,0x5F);	//GCL
-	dcs_write_seq(0x17,0x5F);	//VSS->VGL
-	dcs_write_seq(0x18,0x45);	//CLK2->CKV1
-	dcs_write_seq(0x19,0x47);	//CKK4->CKV3
-	dcs_write_seq(0x1A,0x49);	//CLK6->CKV5
-	dcs_write_seq(0x1B,0x4B);	//CLK8->CKV7
-	dcs_write_seq(0x1C,0x5F);	//VGL
-	dcs_write_seq(0x1D,0x5F);	//VGL
-	dcs_write_seq(0x1E,0x5F);	//VGL
-	dcs_write_seq(0x1F,0x5F);	//NC
-	dcs_write_seq(0x20,0x5F);	//NC
-	dcs_write_seq(0x21,0x5F);	//NC //
-	dcs_write_seq(0x22,0x5F);	//NC
-	dcs_write_seq(0x23,0x5F);	//NC
-	dcs_write_seq(0x24,0x5F);	//NC //
-	dcs_write_seq(0x25,0x5F);	//NC
-	dcs_write_seq(0x26,0x5F);	//NC
-	dcs_write_seq(0x27,0x5F);	//NC //
-	dcs_write_seq(0x28,0x5E);	//GCH
-	dcs_write_seq(0x29,0x5E);	//VDD->VGH
-	dcs_write_seq(0x2A,0x41);	//STV2
-	dcs_write_seq(0x2B,0x43);	//STV4
+	dcs_write_seq(0x16,0x5F); //GCL
+	dcs_write_seq(0x17,0x5F); //VSS->VGL
+	dcs_write_seq(0x18,0x45); //CLK2->CKV1
+	dcs_write_seq(0x19,0x47); //CKK4->CKV3
+	dcs_write_seq(0x1A,0x49); //CLK6->CKV5
+	dcs_write_seq(0x1B,0x4B); //CLK8->CKV7
+	dcs_write_seq(0x1C,0x5F); //VGL
+	dcs_write_seq(0x1D,0x5F); //VGL
+	dcs_write_seq(0x1E,0x5F); //VGL
+	dcs_write_seq(0x1F,0x5F); //NC
+	dcs_write_seq(0x20,0x5F); //NC
+	dcs_write_seq(0x21,0x5F); //NC //
+	dcs_write_seq(0x22,0x5F); //NC
+	dcs_write_seq(0x23,0x5F); //NC
+	dcs_write_seq(0x24,0x5F); //NC //
+	dcs_write_seq(0x25,0x5F); //NC
+	dcs_write_seq(0x26,0x5F); //NC
+	dcs_write_seq(0x27,0x5F); //NC //
+	dcs_write_seq(0x28,0x5E); //GCH
+	dcs_write_seq(0x29,0x5E); //VDD->VGH
+	dcs_write_seq(0x2A,0x41); //STV2
+	dcs_write_seq(0x2B,0x43); //STV4
 
 	//GIP_L_GS Pin mapping
-	dcs_write_seq(0x2C,0x1F);	//GCL
-	dcs_write_seq(0x2D,0x1E);	//VSS->VGH
-	dcs_write_seq(0x2E,0x0B);	//CLK1->CKV7
-	dcs_write_seq(0x2F,0x09);	//CKK3->CKV5
-	dcs_write_seq(0x30,0x07);	//CLK5->CKV3
-	dcs_write_seq(0x31,0x05);	//CLK7->CKV1
-	dcs_write_seq(0x32,0x1F);	//VGL
-	dcs_write_seq(0x33,0x1F);	//VGL
-	dcs_write_seq(0x34,0x1F);	//VGL
-	dcs_write_seq(0x35,0x1F);	//NC
-	dcs_write_seq(0x36,0x1F);	//NC
-	dcs_write_seq(0x37,0x1F);	//NC //
-	dcs_write_seq(0x38,0x1F);	//NC
-	dcs_write_seq(0x39,0x1F);	//NC
-	dcs_write_seq(0x3A,0x1F);	//NC //
-	dcs_write_seq(0x3B,0x1F);	//NC
-	dcs_write_seq(0x3C,0x1F);	//NC
-	dcs_write_seq(0x3D,0x1F);	//NC //
-	dcs_write_seq(0x3E,0x1E);	//GCH
-	dcs_write_seq(0x3F,0x1F);	//VDD->VGL
-	dcs_write_seq(0x40,0x03);	//STV1
-	dcs_write_seq(0x41,0x01);	//STV3
+	dcs_write_seq(0x2C,0x1F); //GCL
+	dcs_write_seq(0x2D,0x1E); //VSS->VGH
+	dcs_write_seq(0x2E,0x0B); //CLK1->CKV7
+	dcs_write_seq(0x2F,0x09); //CKK3->CKV5
+	dcs_write_seq(0x30,0x07); //CLK5->CKV3
+	dcs_write_seq(0x31,0x05); //CLK7->CKV1
+	dcs_write_seq(0x32,0x1F); //VGL
+	dcs_write_seq(0x33,0x1F); //VGL
+	dcs_write_seq(0x34,0x1F); //VGL
+	dcs_write_seq(0x35,0x1F); //NC
+	dcs_write_seq(0x36,0x1F); //NC
+	dcs_write_seq(0x37,0x1F); //NC //
+	dcs_write_seq(0x38,0x1F); //NC
+	dcs_write_seq(0x39,0x1F); //NC
+	dcs_write_seq(0x3A,0x1F); //NC //
+	dcs_write_seq(0x3B,0x1F); //NC
+	dcs_write_seq(0x3C,0x1F); //NC
+	dcs_write_seq(0x3D,0x1F); //NC //
+	dcs_write_seq(0x3E,0x1E); //GCH
+	dcs_write_seq(0x3F,0x1F); //VDD->VGL
+	dcs_write_seq(0x40,0x03); //STV1
+	dcs_write_seq(0x41,0x01); //STV3
 
 	//GIP_R_GS Pin mapping
-	dcs_write_seq(0x42,0x1F);	//GCL
-	dcs_write_seq(0x43,0x1E);	//VSS->VGH
-	dcs_write_seq(0x44,0x0A);	//CLK2->CKV6
-	dcs_write_seq(0x45,0x08);	//CKK4->CKV4
-	dcs_write_seq(0x46,0x06);	//CLK6->CKV2
-	dcs_write_seq(0x47,0x04);	//CLK8->CKV0
-	dcs_write_seq(0x48,0x1F);	//VGL
-	dcs_write_seq(0x49,0x1F);	//VGL
-	dcs_write_seq(0x4A,0x1F);	//VGL
-	dcs_write_seq(0x4B,0x1F);	//NC
-	dcs_write_seq(0x4C,0x1F);	//NC
-	dcs_write_seq(0x4D,0x1F);	//NC //
-	dcs_write_seq(0x4E,0x1F);	//NC
-	dcs_write_seq(0x4F,0x1F);	//NC
-	dcs_write_seq(0x50,0x1F);	//NC //
-	dcs_write_seq(0x51,0x1F);	//NC
-	dcs_write_seq(0x52,0x1F);	//NC
-	dcs_write_seq(0x53,0x1F);	//NC //
-	dcs_write_seq(0x54,0x1E);	//GCH
-	dcs_write_seq(0x55,0x1F);	//VDD->VGL
-	dcs_write_seq(0x56,0x02);	//STV2
-	dcs_write_seq(0x57,0x00);	//STV4
+	dcs_write_seq(0x42,0x1F); //GCL
+	dcs_write_seq(0x43,0x1E); //VSS->VGH
+	dcs_write_seq(0x44,0x0A); //CLK2->CKV6
+	dcs_write_seq(0x45,0x08); //CKK4->CKV4
+	dcs_write_seq(0x46,0x06); //CLK6->CKV2
+	dcs_write_seq(0x47,0x04); //CLK8->CKV0
+	dcs_write_seq(0x48,0x1F); //VGL
+	dcs_write_seq(0x49,0x1F); //VGL
+	dcs_write_seq(0x4A,0x1F); //VGL
+	dcs_write_seq(0x4B,0x1F); //NC
+	dcs_write_seq(0x4C,0x1F); //NC
+	dcs_write_seq(0x4D,0x1F); //NC //
+	dcs_write_seq(0x4E,0x1F); //NC
+	dcs_write_seq(0x4F,0x1F); //NC
+	dcs_write_seq(0x50,0x1F); //NC //
+	dcs_write_seq(0x51,0x1F); //NC
+	dcs_write_seq(0x52,0x1F); //NC
+	dcs_write_seq(0x53,0x1F); //NC //
+	dcs_write_seq(0x54,0x1E); //GCH
+	dcs_write_seq(0x55,0x1F); //VDD->VGL
+	dcs_write_seq(0x56,0x02); //STV2
+	dcs_write_seq(0x57,0x00); //STV4
 
 	//GIP Timing
 	dcs_write_seq(0x58,0x40);
@@ -524,7 +524,7 @@ static int cwu50_init_sequence2(struct cwu50 *ctx)
 	msleep (100);
 
 
-	//--- TE----//
+	//--- TE----
 	dcs_write_seq(0x35,0x00);
 
 	return 0;
@@ -670,6 +670,7 @@ static int cwu50_enable(struct drm_panel *panel)
 
 static int cwu50_get_modes(struct drm_panel *panel, struct drm_connector *connector)
 {
+	struct cwu50 *ctx = panel_to_cwu50(panel);
 	struct drm_display_mode *mode;
 
 	mode = drm_mode_duplicate(connector->dev, &default_mode);
@@ -683,16 +684,12 @@ static int cwu50_get_modes(struct drm_panel *panel, struct drm_connector *connec
 	connector->display_info.width_mm = mode->width_mm;
 	connector->display_info.height_mm = mode->height_mm;
 
+	/* set up connector's "panel orientation" property */
+	drm_connector_set_panel_orientation(connector, ctx->orientation);
+
 	drm_mode_probed_add(connector, mode);
 
 	return 1; /* Number of modes */
-}
-
-static enum drm_panel_orientation cwu50_get_orientation(struct drm_panel *panel)
-{
-	struct cwu50 *ctx = panel_to_cwu50(panel);
-
-	return ctx->orientation;
 }
 
 static const struct drm_panel_funcs cwu50_drm_funcs = {
@@ -701,7 +698,6 @@ static const struct drm_panel_funcs cwu50_drm_funcs = {
 	.prepare = cwu50_prepare,
 	.enable = cwu50_enable,
 	.get_modes = cwu50_get_modes,
-	.get_orientation = cwu50_get_orientation,
 };
 
 static int cwu50_probe(struct mipi_dsi_device *dsi)
