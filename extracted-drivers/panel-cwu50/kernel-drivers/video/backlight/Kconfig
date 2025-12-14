@@ -1,6 +1,0 @@
-config BACKLIGHT_OCP8178
-	tristate "OCP8178 Backlight Driver"
-	depends on GPIOLIB
-	help
-	  If you have an OCP8178, say Y to enable the backlight driver.
- 
