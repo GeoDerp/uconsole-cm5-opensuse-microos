@@ -1,0 +1,14 @@
+[Unit]
+Description=AXP221 Power Button Monitor
+After=sysinit.target axp221-configure-pek.service
+# Ensure i2c tools are available
+Requires=sys-devices-platform-soc-1f00050000.i2c-i2c-13.device
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/axp221-monitor.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

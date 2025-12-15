@@ -21,13 +21,13 @@
 			i2c-gpio,delay-us = <2>;
 			status = "okay";
 			axp22x: pmic@34 {
-				interrupt-controller;
-				#interrupt-cells = <1>;
+				/* interrupt-controller; */
+				/* #interrupt-cells = <1>; */
 				compatible = "x-powers,axp228", "x-powers,axp223", "x-powers,axp221";
 				reg = <0x34>;
-				interrupt-parent = <&rp1_gpio>;
-				interrupts = <2 8>; /* Adjusted IRQ for RP1 */
-				irq-gpios = <&rp1_gpio 2 0>;
+				/* interrupt-parent = <&rp1_gpio>; */
+				/* interrupts = <2 8>; */ /* Adjusted IRQ for RP1 */
+				/* irq-gpios = <&rp1_gpio 2 0>; */
 				regulators {
 					x-powers,dcdc-freq = <3000>;
 					reg_aldo1: aldo1 {
@@ -167,7 +167,7 @@
 				reset-gpio = <&rp1_gpio 8 1>; /* GPIO_ACTIVE_LOW */
 				backlight = <&ocp8178_backlight>;
 				rotation = <90>;
-				vci-supply = <&reg_dcdc3>;
+				vci-supply = <&reg_aldo2>;
 				iovcc-supply = <&reg_aldo2>;
 				status = "okay";
 				port {
