@@ -164,7 +164,10 @@
 			panel_cwu50: panel@0 {
 				compatible = "cw,cwu50";
 				reg = <0>;
-				reset-gpio = <&rp1_gpio 8 1>; /* GPIO_ACTIVE_LOW */
+				reset-gpio = <&rp1_gpio 10 1>; /* Dummy (Real ID pin) */
+				id-gpio = <&rp1_gpio 8 0>;     /* Real Reset pin (masquerading as ID) */
+				pinctrl-0 = <&panel_id_pins>;
+				pinctrl-names = "default";
 				backlight = <&ocp8178_backlight>;
 				rotation = <90>;
 				vci-supply = <&reg_aldo2>;
@@ -175,6 +178,16 @@
 						remote-endpoint = <&dsi_out_port>;
 					};
 				};
+			};
+		};
+	};
+	fragment@5 {
+		target = <&rp1_gpio>;
+		__overlay__ {
+			panel_id_pins: panel_id_pins {
+				function = "gpio";
+				pins = "gpio8";
+				bias-pull-down;
 			};
 		};
 	};

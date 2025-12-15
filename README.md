@@ -51,6 +51,14 @@ sudo systemctl mask btrfs-scrub.timer btrfs-balance.timer btrfs-defrag.timer btr
 The CWU50 panel requires 3.3V on its VCI (Analog) pin. The default CM5 overlay incorrectly supplied 1.8V (`dcdc3`), leading to initialization failures and instability.
 **Fix:** `vci-supply = <&reg_aldo2>;` in `clockworkpi-uconsole-cm5-overlay.dts`.
 
+### Panel Reset Logic (Pin Swap)
+The `panel-cwu50` driver attempts to detect "Old Panel" vs "New Panel" by reading GPIO10. On this hardware revision, detection is flaky. When "Old Panel" is detected, the driver toggles the ID pin (GPIO10) instead of the Reset pin (GPIO8).
+**Fix:** We swapped the pin definitions in the Device Tree:
+*   `id-gpio` -> Set to Hardware GPIO8 (Real Reset Pin).
+*   `reset-gpio` -> Set to Hardware GPIO10 (Dummy).
+*   `pinctrl` -> Pull-Down GPIO8 to force "Old Panel" detection.
+Result: The driver thinks it's resetting the ID pin, but it's actually resetting the Panel Reset pin. This ensures reliable initialization.
+
 ### Power Button (AXP221)
 The BCM2712 GPIO controller cannot easily handle the PMIC's interrupt line in this configuration.
 **Fix:**
