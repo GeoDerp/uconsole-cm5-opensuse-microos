@@ -10,6 +10,10 @@ MASK=0x10
 
 logger -t axp221-monitor "Starting power button monitor..."
 
+# Clear any pending IRQs on startup to prevent boot-loop
+# (e.g. the press used to turn on the device)
+/usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 0xFF
+
 while true; do
     # Read status register
     val=$(/usr/sbin/i2cget -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 2>/dev/null)
