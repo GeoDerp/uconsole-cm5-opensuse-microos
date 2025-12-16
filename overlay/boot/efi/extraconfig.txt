@@ -7,7 +7,7 @@ device_tree=merged-clockworkpi.dtb
 # Enable USB VBUS (power) for USB ports
 dtoverlay=usb-vbus-hog
 
-# Audio overlay (SPDIF/I2S output) - work in progress
+# Audio overlay (SPDIF/I2S output)
 dtoverlay=uconsole-audio
 
 # Enable DWC2 USB controller in host mode for internal keyboard/trackball

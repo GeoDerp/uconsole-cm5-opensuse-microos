@@ -63,6 +63,19 @@ $SSH_CMD $TARGET "sudo mkdir -p /usr/local/sbin && \
     sudo systemctl daemon-reload && \
     sudo systemctl enable axp221-poweroff.service axp221-configure-pek.service"
 
+# Deploy DSI rebind helper
+echo "Deploying DSI rebind helper and service..."
+$SCP_CMD "$REPO_DIR/overlay/usr/local/sbin/uconsole-dsi-rebind.sh" $TARGET:/tmp/
+$SCP_CMD "$REPO_DIR/overlay/etc/systemd/system/uconsole-dsi-rebind.service" $TARGET:/tmp/
+$SCP_CMD "$REPO_DIR/overlay/etc/systemd/system/uconsole-dsi-rebind.timer" $TARGET:/tmp/
+$SSH_CMD $TARGET "sudo mkdir -p /usr/local/sbin && \
+    sudo cp /tmp/uconsole-dsi-rebind.sh /usr/local/sbin/ && \
+    sudo chmod +x /usr/local/sbin/uconsole-dsi-rebind.sh && \
+    sudo cp /tmp/uconsole-dsi-rebind.service /etc/systemd/system/ && \
+    sudo cp /tmp/uconsole-dsi-rebind.timer /etc/systemd/system/ && \
+    sudo systemctl daemon-reload && \
+    sudo systemctl enable uconsole-dsi-rebind.service uconsole-dsi-rebind.timer"
+
 # Deploy btrfsmaintenance timer overrides (prevent display underflow at boot)
 echo "Deploying btrfs timer overrides..."
 for timer in btrfs-scrub btrfs-balance btrfs-trim btrfs-defrag; do
