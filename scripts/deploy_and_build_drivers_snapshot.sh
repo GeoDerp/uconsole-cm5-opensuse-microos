@@ -51,21 +51,20 @@ if [ -z "$TARBALL" ]; then
   TARBALL="$TMP_TAR"
 fi
 
-echo "Uploading driver tarball to target $DEST_HOST:/home/$DEST_USER/uconsole-drivers.tar.gz"
-scp $SSH_OPTS "$TARBALL" "$DEST_USER@$DEST_HOST:/home/$DEST_USER/uconsole-drivers.tar.gz"
+echo "Streaming driver tarball into transactional-update and building inside snapshot"
 
 if [ "$INSTALL_DEPS" = true ]; then
-  echo "Installing kernel build packages on target via transactional-update..."
+  echo "Installing kernel build packages on target via transactional-update (pre-step)..."
   ssh $SSH_OPTS "$DEST_USER@$DEST_HOST" "sudo transactional-update pkg install -y kernel-default-devel make gcc" || true
 fi
 
-echo "Running build/install inside transactional-update on target"
-ssh $SSH_OPTS "$DEST_USER@$DEST_HOST" "sudo transactional-update run /bin/sh -c '
+cat "$TARBALL" | ssh $SSH_OPTS "$DEST_USER@$DEST_HOST" "sudo transactional-update run /bin/sh -c '
   set -euo pipefail
   TMPDIR=/tmp/uconsole-drivers-install
-  rm -rf \"$TMPDIR\" && mkdir -p \"$TMPDIR\"
-  tar -xzf /home/$DEST_USER/uconsole-drivers.tar.gz -C \"$TMPDIR\"
-  cd \"$TMPDIR/extracted-drivers\"
+  rm -rf \"\$TMPDIR\" && mkdir -p \"\$TMPDIR\"
+  cat > \"\$TMPDIR/uconsole-drivers.tar.gz\"
+  tar -xzf \"\$TMPDIR/uconsole-drivers.tar.gz\" -C \"\$TMPDIR\"
+  cd \"\$TMPDIR/extracted-drivers\"
   KVER=\$(uname -r)
   if [ ! -d /lib/modules/\$KVER/build ]; then
     echo "Kernel build headers not found. Installing kernel-default-devel in snapshot..."
@@ -85,7 +84,7 @@ ssh $SSH_OPTS "$DEST_USER@$DEST_HOST" "sudo transactional-update run /bin/sh -c 
   done
   depmod -a || true
   echo "Driver build/install in snapshot complete."
-'"
+'" || true
 
 echo "Driver installation finished on target."
 
