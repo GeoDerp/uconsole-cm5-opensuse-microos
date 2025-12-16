@@ -49,6 +49,7 @@ exec swayidle -w \
     timeout 300 '$lock' \
     timeout 600 'swaymsg "output * power off"' \
     resume 'swaymsg "output * power on"' \
+    lock '$lock' \
     before-sleep '$lock'
 
 ### Lock screen on boot (for security)

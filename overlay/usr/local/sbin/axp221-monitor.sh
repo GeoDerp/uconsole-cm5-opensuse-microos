@@ -51,16 +51,16 @@ while true; do
     if [ -n "$val" ]; then
         # Check if Bit 4 is set
         if [ $(($val & $MASK)) -ne 0 ]; then
-            logger -t axp221-monitor "Power button pressed! Initiating shutdown..."
+            logger -t axp221-monitor "Power button pressed! Locking session..."
             
             # Clear the interrupt (write 1 to the bit)
             /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} $MASK
             
-            # Trigger graceful shutdown
-            /usr/sbin/poweroff
+            # Trigger session lock (Swayidle must handle this)
+            /usr/bin/loginctl lock-session
             
-            # Exit loop
-            exit 0
+            # Continue monitoring (do not exit)
+            sleep 1
         fi
     fi
     
