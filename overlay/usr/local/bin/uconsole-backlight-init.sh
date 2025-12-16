@@ -39,12 +39,6 @@ sleep 0.5
 # Rebind AXP driver
 echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/bind 2>/dev/null
 
-# Explicitly load display and backlight drivers
-echo "Loading display drivers..."
-/usr/sbin/modprobe panel_cwu50 2>/dev/null
-/usr/sbin/modprobe drm_rp1_dsi 2>/dev/null
-/usr/sbin/modprobe ocp8178_bl 2>/dev/null
-
 # Set brightness - assuming backlight driver will load and create device
 if [ -e /sys/class/backlight/backlight@0/brightness ]; then
     echo 8 > /sys/class/backlight/backlight@0/brightness 2>/dev/null
