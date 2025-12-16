@@ -17,6 +17,10 @@ done
 /usr/sbin/insmod /var/lib/modules-overlay/axp20x_ac_power.ko 2>/dev/null
 /usr/sbin/insmod /var/lib/modules-overlay/axp20x_battery.ko 2>/dev/null
 
+# Unload display drivers before power cycle to prevent desync
+echo "Unloading display drivers..."
+/usr/sbin/modprobe -r panel_cwu50 drm_rp1_dsi ocp8178_bl 2>/dev/null
+
 # Power Cycle Display (ALDO2)
 # Unbind AXP driver first to release I2C address
 if [ -d /sys/bus/i2c/drivers/axp20x-i2c ]; then
@@ -41,9 +45,9 @@ echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/bind 2>/dev/null
 
 # Explicitly load display and backlight drivers
 echo "Loading display drivers..."
-/usr/sbin/insmod /var/lib/modules-overlay/panel-cwu50.ko 2>/dev/null
-/usr/sbin/insmod /var/lib/modules-overlay/drm_rp1_dsi.ko 2>/dev/null
-/usr/sbin/insmod /var/lib/modules-overlay/ocp8178_bl.ko 2>/dev/null
+/usr/sbin/modprobe panel_cwu50 2>/dev/null
+/usr/sbin/modprobe drm_rp1_dsi 2>/dev/null
+/usr/sbin/modprobe ocp8178_bl 2>/dev/null
 
 # Set brightness - assuming backlight driver will load and create device
 if [ -e /sys/class/backlight/backlight@0/brightness ]; then
