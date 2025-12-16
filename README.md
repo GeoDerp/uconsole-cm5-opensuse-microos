@@ -1,76 +1,77 @@
 # uConsole CM5 on openSUSE MicroOS
 
-This repository contains the necessary drivers, device tree overlays, and configuration scripts to run **openSUSE MicroOS** on the **ClockworkPi uConsole CM5** (Raspberry Pi Compute Module 5).
+This repository contains the drivers, device tree overlays, and configuration scripts required to run **openSUSE MicroOS** on the **ClockworkPi uConsole CM5** (Raspberry Pi Compute Module 5). It addresses critical hardware-specific issues including display voltage, power management, and driver instability.
 
-## Critical Fixes & Status
+## System Status
 
 | Feature | Status | Fix Details |
 |---------|--------|-------------|
-| **Display** | ✅ Stable | Fixed VCI undervoltage. Configured for 3.3V (`aldo2`) instead of 1.8V. |
-| **Power Off** | ✅ Fixed | Implemented direct I2C shutdown script to bypass broken kernel handler. |
-| **Power Button** | ✅ Fixed | Added polling daemon (`axp221-monitor`) for graceful shutdown (Tap) and hardware config for Hard-Off (Hold 4s). |
-| **Backlight** | ✅ Working | Patched driver to prevent brightness reset loops. |
-| **Wifi/BT** | ✅ Working | Standard CM5 support. |
-| **Boot Reliability** | ⚠️ Warning | BTRFS maintenance tasks cause I/O storms that can kill the display. **Must mask timers.** |
-| **USB Devices** | ⚠️ Unstable | Keyboard/Trackball (DWC2) subject to random disconnects. |
+| **Display** | ✅ Stable | **Pin Swap Overlay:** Forces driver to use correct reset logic. **Voltage:** Set to 3.3V (`aldo2`). |
+| **Backlight** | ✅ Working | patched driver handles initialization logic. |
+| **Power Button (Hold)** | ✅ Working | Hardware Hard-Off set to **4 Seconds** via PMIC register. |
+| **Power Button (Tap)** | ✅ Working* | Software daemon polls PMIC for graceful shutdown. *Requires functioning I2C bus.* |
+| **Shutdown** | ✅ Safe | Custom script forces PMIC shutdown via I2C, preventing regulator crashes. |
+| **Boot Reliability** | ✅ Stable | BTRFS maintenance timers masked to prevent I/O storms and display underflows. |
 
 ## Installation
 
 ### 1. Prerequisites
 - uConsole CM5 Device
-- openSUSE MicroOS image (aarch64) installed
+- openSUSE MicroOS (aarch64) installed
 - SSH access
 
-### 2. Deploy Overlays & Config
+### 2. Deploy Configuration & Overlays
 Run the deployment script from your host machine:
 
 ```bash
 ./scripts/deploy_overlays_to_device.sh user@uconsole-ip --names clockworkpi-uconsole-cm5
 ```
 
-### 3. Deploy Power Scripts & Services
-Copy the `overlay` directory contents to the device root:
+### 3. Deploy Power Management
+Copy the critical power scripts and services:
 
 ```bash
-# Example manual deployment
 scp overlay/usr/local/sbin/* user@device:/usr/local/sbin/
-scp overlay/etc/systemd/system/* user@device:/etc/systemd/system/
-ssh user@device "sudo systemctl daemon-reload && sudo systemctl enable axp221-monitor.service axp221-poweroff.service"
+scp overlay/etc/systemd/system/axp221-monitor.service user@device:/etc/systemd/system/
+ssh user@device "sudo systemctl daemon-reload && sudo systemctl enable axp221-monitor.service axp221-configure-pek.service"
 ```
 
-### 4. Critical: Disable BTRFS Maintenance
-To prevent boot-time display failure due to DMA underflow:
+### 4. Enable Sway Session (Optional)
+To replace the fragile console autologin with a robust graphical session:
 
 ```bash
-sudo systemctl mask btrfs-scrub.timer btrfs-balance.timer btrfs-defrag.timer btrfs-trim.timer
+scp overlay/home/geo/.config/systemd/user/sway.service user@device:~/.config/systemd/user/
+ssh user@device "systemctl --user enable sway.service"
 ```
 
-## Architecture Details
+## Troubleshooting & Safety
 
-### Display Voltage Fix
-The CWU50 panel requires 3.3V on its VCI (Analog) pin. The default CM5 overlay incorrectly supplied 1.8V (`dcdc3`), leading to initialization failures and instability.
-**Fix:** `vci-supply = <&reg_aldo2>;` in `clockworkpi-uconsole-cm5-overlay.dts`.
+### 🛑 Boot Loop Recovery
+If the device shuts down immediately after boot (Power Button Monitor false positive):
+1.  Connect a USB keyboard.
+2.  Power on and hold `Shift` or press `Esc` to access GRUB.
+3.  Edit the boot entry: Add `systemd.unit=rescue.target`.
+4.  Boot (F10).
+5.  Disable the monitor: `systemctl disable axp221-monitor.service`.
 
-### Panel Reset Logic (Pin Swap)
-The `panel-cwu50` driver attempts to detect "Old Panel" vs "New Panel" by reading GPIO10. On this hardware revision, detection is flaky. When "Old Panel" is detected, the driver toggles the ID pin (GPIO10) instead of the Reset pin (GPIO8).
-**Fix:** We swapped the pin definitions in the Device Tree:
-*   `id-gpio` -> Set to Hardware GPIO8 (Real Reset Pin).
-*   `reset-gpio` -> Set to Hardware GPIO10 (Dummy).
-*   `pinctrl` -> Pull-Down GPIO8 to force "Old Panel" detection.
-Result: The driver thinks it's resetting the ID pin, but it's actually resetting the Panel Reset pin. This ensures reliable initialization.
+### 📺 Black Screen
+*   **Locked:** The screen is likely just locked by Swaylock. Type your password and press Enter.
+*   **Backlight Off:** If `dmesg` says backlight is on but screen is dark, reload the driver: `sudo rmmod ocp8178_bl && sudo modprobe ocp8178_bl`.
 
-### Power Button (AXP221)
-The BCM2712 GPIO controller cannot easily handle the PMIC's interrupt line in this configuration.
-**Fix:**
-1.  **Hardware:** `axp221-configure-pek.sh` sets the PMIC's internal "Hard Off" timer to 4 seconds.
-2.  **Software:** `axp221-monitor.sh` polls the PMIC IRQ status register (0x44) via I2C to detect short presses and trigger `poweroff`.
+## Lessons Learnt & Architecture
 
-### Shutdown Logic
-Unbinding the PMIC driver to issue a shutdown command causes a regulator collapse.
-**Fix:** `axp221-poweroff.sh` uses `i2cset -f` to write the shutdown command (Reg 0x32 -> 0x80) *without* unbinding the driver, ensuring power stays stable until the PMIC cuts it.
+### 1. Display Reset Race Condition
+**Problem:** The `panel-cwu50` driver toggles the Reset pin too early during boot, while the 3.3V regulator is still ramping up. The panel ignores this "weak" reset and fails to initialize.
+**Solution:** We implemented a **GPIO Pin Swap** in the Device Tree. We mapped the "ID Pin" to the real Hardware Reset pin and pulled it LOW. This forces the driver into "Old Panel" detection mode, which triggers a specific toggle sequence on the "ID Pin" (actually the Reset Pin). This alternative sequence proves physically robust on every boot.
 
-## Known Issues
+### 2. PMIC Interrupt Latching (The Boot Loop)
+**Problem:** Pressing the power button to turn *on* the device latches the "Short Press" interrupt bit in the AXP221 PMIC. When Linux boots, the polling script reads this "1" and immediately triggers a shutdown.
+**Solution:** The `axp221-monitor.sh` script now implements a **Safety Interlock**:
+1.  Waits for I2C bus availability.
+2.  Attempts to clear the IRQ register (`0x44`) up to 5 times.
+3.  **Fatal Exit:** If the IRQ cannot be cleared (stuck high), the script **exits** instead of entering the monitoring loop. This prevents the infinite reboot cycle.
+4.  **Safety Delay:** A 30-second sleep is added before the first poll to allow user intervention.
 
-*   **Display Underflow:** High system load (disk I/O) can starve the DSI display pipeline, causing "Underflow" errors or momentary black screens. Disable heavy background services.
-*   **USB Disconnects:** The internal USB hub (keyboard/trackball) connected to the DWC2 controller may disconnect randomly. This is an upstream driver issue.
-*   **Uptime Bug:** The CM5 uptime counter may report incorrect values (e.g., 89 days) immediately after boot. Use `dmesg` timestamps for accuracy.
+### 3. Driver Unbind Crash
+**Problem:** The standard `shutdown` command attempts to unbind device drivers. Unbinding the AXP20x I2C driver kills all child regulators immediately, cutting power to the CPU/RAM before the filesystem syncs.
+**Solution:** The `axp221-poweroff.sh` script uses `i2cset -f` (Force Mode) to write the shutdown command directly to the PMIC *without* unbinding the driver. This maintains system power stability until the very last moment.

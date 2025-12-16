@@ -7,8 +7,12 @@ Requires=sys-devices-platform-soc-1f00050000.i2c-i2c-13.device
 [Service]
 Type=simple
 ExecStart=/usr/local/sbin/axp221-monitor.sh
-Restart=always
-RestartSec=5
+# Prevent restart loops: If it fails (exits 1 due to stuck IRQ), DO NOT restart immediately.
+# Restart=on-failure with a long delay or limited burst
+Restart=on-failure
+RestartSec=60
+StartLimitIntervalSec=300
+StartLimitBurst=3
 
 [Install]
 WantedBy=multi-user.target
