@@ -10,9 +10,26 @@ MASK=0x10
 
 logger -t axp221-monitor "Starting power button monitor..."
 
+# Wait for I2C device
+for i in {1..10}; do
+    if [ -e "/dev/i2c-${AXP_BUS}" ]; then
+        break
+    fi
+    sleep 0.5
+done
+
 # Clear any pending IRQs on startup to prevent boot-loop
-# (e.g. the press used to turn on the device)
-/usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 0xFF
+# Retry clearing until readback confirms it's clear
+for i in {1..5}; do
+    /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 0xFF
+    val=$(/usr/sbin/i2cget -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 2>/dev/null)
+    if [ -n "$val" ] && [ $(($val & $MASK)) -eq 0 ]; then
+        logger -t axp221-monitor "IRQ cleared successfully (Reg 0x44: $val)"
+        break
+    fi
+    logger -t axp221-monitor "Failed to clear IRQ (Reg 0x44: $val), retrying..."
+    sleep 0.5
+done
 
 while true; do
     # Read status register
