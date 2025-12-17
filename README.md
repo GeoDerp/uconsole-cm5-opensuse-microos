@@ -9,7 +9,7 @@ This repository contains the drivers, device tree overlays, and configuration sc
 | **Display** | ✅ Stable | **Pin Swap Overlay:** Forces driver to use correct reset logic. **Voltage:** Set to 3.3V (`aldo2`). |
 | **Backlight** | ✅ Working | patched driver handles initialization logic. |
 | **Power Button (Hold)** | ✅ Working | Hardware Hard-Off set to **4 Seconds** via PMIC register. |
-| **Power Button (Tap)** | ✅ Working* | Software daemon polls PMIC for graceful shutdown. *Requires functioning I2C bus.* |
+| **Power Button (Tap)** | ❌ Disabled | Disabled due to hardware IRQ stuck-high fault on this unit. |
 | **Shutdown** | ✅ Safe | Custom script forces PMIC shutdown via I2C, preventing regulator crashes. |
 | **Boot Reliability** | ✅ Stable | BTRFS maintenance timers masked to prevent I/O storms and display underflows. |
 
@@ -28,16 +28,17 @@ Run the deployment script from your host machine:
 ```
 
 ### 3. Deploy Power Management
-Copy the critical power scripts and services:
+Copy the critical power scripts:
 
 ```bash
-scp overlay/usr/local/sbin/* user@device:/usr/local/sbin/
-scp overlay/etc/systemd/system/axp221-monitor.service user@device:/etc/systemd/system/
-ssh user@device "sudo systemctl daemon-reload && sudo systemctl enable axp221-monitor.service axp221-configure-pek.service"
+scp overlay/usr/local/sbin/axp221-poweroff.sh user@device:/usr/local/sbin/
+scp overlay/usr/local/sbin/axp221-configure-pek.sh user@device:/usr/local/sbin/
+ssh user@device "sudo systemctl daemon-reload && sudo systemctl enable axp221-configure-pek.service"
 ```
+*(Note: `axp221-monitor.service` is disabled by default due to hardware IRQ issues).*
 
 ### 4. Enable Sway Session (Optional)
-To replace the fragile console autologin with a robust graphical session:
+To start Sway automatically after TTY login:
 
 ```bash
 scp overlay/home/geo/.config/systemd/user/sway.service user@device:~/.config/systemd/user/
@@ -65,13 +66,17 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
 **Solution:** We implemented a **GPIO Pin Swap** in the Device Tree. We mapped the "ID Pin" to the real Hardware Reset pin and pulled it LOW. This forces the driver into "Old Panel" detection mode, which triggers a specific toggle sequence on the "ID Pin" (actually the Reset Pin). This alternative sequence proves physically robust on every boot.
 
 ### 2. PMIC Interrupt Latching (The Boot Loop)
-**Problem:** Pressing the power button to turn *on* the device latches the "Short Press" interrupt bit in the AXP221 PMIC. When Linux boots, the polling script reads this "1" and immediately triggers a shutdown.
-**Solution:** The `axp221-monitor.sh` script now implements a **Safety Interlock**:
-1.  Waits for I2C bus availability.
-2.  Attempts to clear the IRQ register (`0x44`) up to 5 times.
-3.  **Fatal Exit:** If the IRQ cannot be cleared (stuck high), the script **exits** instead of entering the monitoring loop. This prevents the infinite reboot cycle.
-4.  **Safety Delay:** A 30-second sleep is added before the first poll to allow user intervention.
+**Problem:** Pressing the power button to turn *on* the device latches the "Short Press" interrupt bit in the AXP221 PMIC. On some units, this bit gets stuck HIGH (`0xFF` readback), causing the monitoring script to think the button is constantly pressed.
+**Solution:** The `axp221-monitor.sh` script implements a safety check. If it cannot clear the IRQ on startup, it **exits** instead of entering the monitoring loop. This prevents the infinite reboot cycle, but disables the "Tap" functionality.
 
 ### 3. Driver Unbind Crash
 **Problem:** The standard `shutdown` command attempts to unbind device drivers. Unbinding the AXP20x I2C driver kills all child regulators immediately, cutting power to the CPU/RAM before the filesystem syncs.
 **Solution:** The `axp221-poweroff.sh` script uses `i2cset -f` (Force Mode) to write the shutdown command directly to the PMIC *without* unbinding the driver. This maintains system power stability until the very last moment.
+
+
+## Known Limitations
+
+*   **Reboot Behavior:** The `reboot` command may fully power off the device instead of restarting it. This is a behavior of the AXP221 PMIC integration on this board. You must press the power button to turn it back on.
+*   **Startup Sequence:** The device boots to a **TTY Login Prompt** (text mode). You must log in (user: `geo`) to automatically start the graphical interface (Sway).
+*   **Sleep/Hibernate:** Not currently supported due to missing RTC drivers and swap space.
+
