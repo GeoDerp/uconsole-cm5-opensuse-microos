@@ -121,7 +121,7 @@
 			battery: battery@0 {
 				compatible = "simple-battery";
 				device-chemistry = "lithium-ion";
-				constant-charge-current-max-microamp = <2100000>;
+				constant-charge-current-max-microamp = <1200000>;
 				voltage-max-design-microvolt = <4200000>;
 				re-charge-voltage-microvolt = <4000000>;
 				voltage-min-design-microvolt = <2900000>;
