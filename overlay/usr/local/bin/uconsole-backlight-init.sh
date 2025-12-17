@@ -14,8 +14,8 @@ done
 # Load dependencies (AXP drivers) - other modules handled by modprobe.d
 /usr/sbin/modprobe industrialio 2>/dev/null
 /usr/sbin/modprobe axp20x_adc 2>/dev/null
-/usr/sbin/insmod /var/lib/modules-overlay/axp20x_ac_power.ko 2>/dev/null
-/usr/sbin/insmod /var/lib/modules-overlay/axp20x_battery.ko 2>/dev/null
+/usr/sbin/modprobe axp20x_ac_power 2>/dev/null
+/usr/sbin/modprobe axp20x_battery 2>/dev/null
 
 # Unload display drivers before power cycle to prevent desync
 echo "Unloading display drivers..."
