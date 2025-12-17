@@ -51,13 +51,18 @@ while true; do
     if [ -n "$val" ]; then
         # Check if Bit 4 is set
         if [ $(($val & $MASK)) -ne 0 ]; then
-            logger -t axp221-monitor "Power button pressed! Locking session..."
             
             # Clear the interrupt (write 1 to the bit)
             /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} $MASK
             
-            # Trigger session lock (Swayidle must handle this)
-            /usr/bin/loginctl lock-session
+            # Check if Sway is running
+            if pgrep -x sway >/dev/null; then
+                logger -t axp221-monitor "Power button pressed! Locking session..."
+                # Trigger session lock (Swayidle must handle this)
+                /usr/bin/loginctl lock-session
+            else
+                logger -t axp221-monitor "Power button pressed but Sway not running (TTY mode). Ignoring."
+            fi
             
             # Continue monitoring (do not exit)
             sleep 1
