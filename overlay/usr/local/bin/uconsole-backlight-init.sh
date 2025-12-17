@@ -28,17 +28,21 @@ if [ -d /sys/bus/i2c/drivers/axp20x-i2c ]; then
 fi
 
 # Toggle ALDO2
-VAL=$(/usr/sbin/i2cget -y -f 13 0x34 0x10)
-# Clear bit 2 (0xFB mask)
-OFF_VAL=$(printf "0x%X" $(( $VAL & 0xFB )))
-# Set bit 2 (0x04 mask)
-ON_VAL=$(printf "0x%X" $(( $VAL | 0x04 )))
+VAL=$(/usr/sbin/i2cget -y -f 13 0x34 0x10 2>/dev/null)
+if [ -n "$VAL" ]; then
+    # Clear bit 2 (0xFB mask)
+    OFF_VAL=$(printf "0x%X" $(( $VAL & 0xFB )))
+    # Set bit 2 (0x04 mask)
+    ON_VAL=$(printf "0x%X" $(( $VAL | 0x04 )))
 
-echo "Power cycling display (ALDO2)..."
-/usr/sbin/i2cset -y -f 13 0x34 0x10 $OFF_VAL
-sleep 1
-/usr/sbin/i2cset -y -f 13 0x34 0x10 $ON_VAL
-sleep 0.5
+    echo "Power cycling display (ALDO2)..."
+    /usr/sbin/i2cset -y -f 13 0x34 0x10 $OFF_VAL
+    sleep 1
+    /usr/sbin/i2cset -y -f 13 0x34 0x10 $ON_VAL
+    sleep 0.5
+else
+    echo "WARNING: Failed to read PMIC via I2C. Skipping power cycle."
+fi
 
 # Rebind AXP driver
 echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/bind 2>/dev/null
