@@ -78,5 +78,8 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
 
 *   **Reboot Behavior:** The `reboot` command may fully power off the device instead of restarting it. This is a behavior of the AXP221 PMIC integration on this board. You must press the power button to turn it back on.
 *   **Startup Sequence:** The device boots to a **TTY Login Prompt** (text mode). You must log in (user: `geo`) to automatically start the graphical interface (Sway).
-*   **Sleep/Hibernate:** Not currently supported due to missing RTC drivers and swap space.
+*   **Sleep/Hibernate:** **Not Supported.**
+    *   **Sleep:** Fails due to missing RTC driver (`/dev/rtc0` not found).
+    *   **Hibernate:** Fails due to no Swap space configured.
+    *   *Workaround:* Use **Shutdown** (Power Off) to save battery. Boot time is fast.
 
