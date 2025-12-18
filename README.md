@@ -1,5 +1,7 @@
 # uConsole CM5 on openSUSE MicroOS
 
+![alt text](img/uconsole.jpg)
+
 This repository contains the drivers, device tree overlays, and configuration scripts required to run **openSUSE MicroOS** on the **ClockworkPi uConsole CM5** (Raspberry Pi Compute Module 5). It addresses critical hardware-specific issues including display voltage, power management, and driver instability.
 
 ## System Status
@@ -120,3 +122,5 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
     *   **Hibernate:** Fails due to no Swap space configured.
     *   *Workaround:* Use **Shutdown** (Power Off) to save battery. Boot time is fast.
 
+## Todo
+[ ] battery level on waybar (via i2cget)
