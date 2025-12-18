@@ -15,11 +15,11 @@ IRQ_STAT1_REG=0x44
 # Read current PEK register value
 current=$(/usr/sbin/i2cget -f -y ${AXP_BUS} ${AXP_ADDR} ${PEK_REG} 2>/dev/null)
 if [ -n "$current" ]; then
-    # Clear bits 0-1 (Shutdown time: 00=4s)
-    # Mask: 0xFC (1111 1100)
-    new_val=$(($current & 0xFC))
+    # Set bits 0-1 to 01 (Shutdown time: 01=6s)
+    # Mask: 0xFC (1111 1100), OR with 0x01
+    new_val=$(( ($current & 0xFC) | 0x01 ))
     /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${PEK_REG} ${new_val}
-    logger -t axp221-pek "Configured PEK hard-off to 4s (Reg 0x36: $new_val)"
+    logger -t axp221-pek "Configured PEK hard-off to 6s (Reg 0x36: $new_val)"
 else
     logger -t axp221-pek "Failed to read PEK register!"
 fi
