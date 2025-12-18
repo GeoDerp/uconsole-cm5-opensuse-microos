@@ -66,14 +66,8 @@
     "custom/battery": {
         "exec": "/usr/local/bin/uconsole-battery.sh",
         "return-type": "json",
-        "states": {
-            "warning": 30,
-            "critical": 15
-        },
-        "format": "{capacity}% ▮",
-        "format-charging": "{capacity}% ↑",
-        "format-plugged": "{capacity}% ●",
-        "format-alt": "{time} ▮",
+        "interval": 30,
+        "format": "{}",
         "tooltip": true
     },
 
