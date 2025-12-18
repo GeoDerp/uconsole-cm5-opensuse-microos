@@ -1,0 +1,2 @@
+# Allow members of the 'seat' group to access AXP221 PMIC bus
+KERNEL=="i2c-13", GROUP="seat", MODE="0660"

@@ -30,17 +30,27 @@ PERC=$(( ($MV - $MIN) * 100 / ($MAX - $MIN) ))
 STATUS_REG=$(/usr/sbin/i2cget -f -y $AXP_BUS $AXP_ADDR 0x01 2>/dev/null)
 CHARGING=$(( ($STATUS_REG >> 6) & 1 ))
 
+# Check Power Source (Reg 0x00)
+# Bit 7: ACIN Present, Bit 5: VBUS Present
+PWR_SRC_REG=$(/usr/sbin/i2cget -f -y $AXP_BUS $AXP_ADDR 0x00 2>/dev/null)
+ACIN=$(( ($PWR_SRC_REG >> 7) & 1 ))
+VBUS=$(( ($PWR_SRC_REG >> 5) & 1 ))
+PLUGGED=$(( $ACIN | $VBUS ))
+
 if [ $CHARGING -eq 1 ]; then
     ICON="↑"
     CLASS="charging"
+elif [ $PLUGGED -eq 1 ]; then
+    ICON="●"
+    CLASS="plugged"
 else
     ICON="▮"
     CLASS="discharging"
 fi
 
 # Determine warning levels
-[ $PERC -le 20 ] && CLASS="${CLASS} warning"
-[ $PERC -le 10 ] && CLASS="${CLASS} critical"
+[ $PERC -le 30 ] && CLASS="${CLASS} warning"
+[ $PERC -le 15 ] && CLASS="${CLASS} critical"
 
 # Return JSON with capacity for compatibility
 echo "{\"text\": \"${PERC}% ${ICON}\", \"tooltip\": \"Voltage: ${MV}mV\", \"class\": \"${CLASS}\", \"percentage\": ${PERC}, \"capacity\": ${PERC}}"
