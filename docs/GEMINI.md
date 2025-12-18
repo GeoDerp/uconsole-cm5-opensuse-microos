@@ -21,3 +21,16 @@
 *   **Tap Power Button:** Disabled due to stuck hardware interrupt.
 ### Power Button Update
 - Changed Hard Shutdown hold time from 4s to 6s (Register 0x36 = 0x59) to improve reliability against PMIC noise.
+
+### Battery Management Status (Post-Fix)
+**Hardware**:
+- **ADC Sensor**: Working (Reads ~3.7V via I2C).
+- **Charging**: Functional (PMIC autonomous).
+- **Power Source**: AC/Battery switching works.
+
+**Software (Linux Driver)**:
+- **Status**: **Driver Probe Failure**.
+- **Symptoms**: `axp20x_battery` module loads but does not create `/sys/class/power_supply` entries.
+- **Impact**: Waybar/Sway cannot display battery percentage.
+- **Root Cause**: Likely a Device Tree mismatch where the `axp20x-i2c` MFD driver does not automatically instantiate the battery cell from the DT overlay.
+- **Workaround**: None implemented. Battery management is handled by hardware. Monitoring is possible via manual `i2cget` scripts but not integrated into UI.
