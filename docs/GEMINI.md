@@ -19,3 +19,5 @@
 *   **Battery Reporting:** Unreliable/Inaccurate due to PMIC sensor fault. Expect immediate shutdown on battery removal.
 *   **USB Devices:** Prone to disconnects (known issue).
 *   **Tap Power Button:** Disabled due to stuck hardware interrupt.
+### Power Button Update
+- Changed Hard Shutdown hold time from 4s to 6s (Register 0x36 = 0x59) to improve reliability against PMIC noise.
