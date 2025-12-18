@@ -123,4 +123,5 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
     *   *Workaround:* Use **Shutdown** (Power Off) to save battery. Boot time is fast.
 
 ## Todo
-[ ] battery level on waybar (via i2cget)
+- [ ] battery level on waybar (via i2cget)
+- [ ] smoth out tracball
