@@ -13,37 +13,74 @@ This repository contains the drivers, device tree overlays, and configuration sc
 | **Shutdown** | ✅ Safe | Custom script forces PMIC shutdown via I2C, preventing regulator crashes. |
 | **Boot Reliability** | ✅ Stable | BTRFS maintenance timers masked to prevent I/O storms and display underflows. |
 
-## Installation
+## Installation (Fresh Install)
 
-### 1. Prerequisites
-- uConsole CM5 Device
-- openSUSE MicroOS (aarch64) installed
-- SSH access
+Follow these steps to set up a new openSUSE MicroOS installation on the uConsole CM5.
 
-### 2. Deploy Configuration & Overlays
-Run the deployment script from your host machine:
+### 1. Prepare the OS
+1.  Flash the **openSUSE MicroOS (aarch64)** image to your CM5 eMMC or SD card.
+2.  Boot the device. Connect a USB keyboard/mouse and HDMI display if the internal screen is not yet working.
+3.  Connect to Wi-Fi/Ethernet.
+4.  Enable SSH: `sudo systemctl enable --now sshd`.
 
+### 2. Prepare the Host
+On your computer (Linux/macOS), clone this repository:
 ```bash
-./scripts/deploy_overlays_to_device.sh user@uconsole-ip --names clockworkpi-uconsole-cm5
+git clone https://github.com/GeoDerp/uconsole-cm5-opensuse-microos.git
+cd uconsole-cm5-opensuse-microos
 ```
 
-### 3. Deploy Power Management
-Copy the critical power scripts:
-
+### 3. Deploy Configuration & Overlays
+Run the deployment script to install the device tree overlays and base configuration. This fixes the display voltage and pinout.
 ```bash
-scp overlay/usr/local/sbin/axp221-poweroff.sh user@device:/usr/local/sbin/
-scp overlay/usr/local/sbin/axp221-configure-pek.sh user@device:/usr/local/sbin/
-ssh user@device "sudo systemctl daemon-reload && sudo systemctl enable axp221-configure-pek.service"
+# Replace 'user' and 'ip' with your device's details
+./scripts/deploy_overlays_to_device.sh user@ip --names clockworkpi-uconsole-cm5
 ```
-*(Note: `axp221-monitor.service` is disabled by default due to hardware IRQ issues).*
+*The device will reboot.*
 
-### 4. Enable Sway Session (Optional)
-To start Sway automatically after TTY login:
-
+### 4. Build & Install Drivers
+Run the driver build script. This compiles the custom kernel modules (`panel-cwu50`, `ocp8178_bl`, `drm-rp1-dsi`) on the device to match the running kernel.
 ```bash
-scp overlay/home/geo/.config/systemd/user/sway.service user@device:~/.config/systemd/user/
-ssh user@device "systemctl --user enable sway.service"
+./scripts/deploy_and_build_drivers_snapshot.sh user@ip
 ```
+*The device will reboot again.*
+
+### 5. Deploy Power Management & Services
+Copy the critical power management scripts and enable the necessary services.
+```bash
+# Copy scripts
+scp overlay/usr/local/sbin/* user@ip:/usr/local/sbin/
+scp overlay/usr/local/bin/uconsole-backlight-init.sh user@ip:/usr/local/bin/
+
+# Copy service files
+scp overlay/etc/systemd/system/axp221-monitor.service user@ip:/etc/systemd/system/
+scp overlay/etc/systemd/logind.conf.d/uconsole-power.conf user@ip:/etc/systemd/logind.conf.d/
+
+# Enable services
+ssh user@ip "sudo chmod +x /usr/local/sbin/*.sh /usr/local/bin/*.sh"
+ssh user@ip "sudo restorecon -v /usr/local/sbin/* /usr/local/bin/*"
+ssh user@ip "sudo systemctl daemon-reload"
+ssh user@ip "sudo systemctl enable axp221-configure-pek.service uconsole-backlight.service"
+# Note: axp221-monitor.service is disabled by default due to hardware IRQ issues on some units.
+```
+
+### 6. Configure User Session (Sway)
+MicroOS boots to a TTY by default. Configure Sway to start automatically upon login.
+```bash
+# Copy Sway user service
+ssh user@ip "mkdir -p ~/.config/systemd/user/"
+scp overlay/home/geo/.config/systemd/user/sway.service user@ip:~/.config/systemd/user/
+
+# Enable service
+ssh user@ip "systemctl --user enable sway.service"
+```
+
+### 7. Finalize
+Reboot the device.
+1.  Log in at the TTY prompt.
+2.  Sway should start automatically.
+3.  The screen should be active and backlight adjustable.
+
 
 ## Troubleshooting & Safety
 
