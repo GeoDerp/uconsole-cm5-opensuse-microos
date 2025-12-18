@@ -49,6 +49,7 @@ window#waybar.hidden {
 
 #clock,
 #battery,
+#custom-battery,
 #cpu,
 #memory,
 #disk,
@@ -80,12 +81,12 @@ window#waybar.hidden {
     background-color: #924623;
 }
 
-#battery {
+#battery, #custom-battery {
     background-color: #924623;
     color: #FFFFFF;
 }
 
-#battery.charging, #battery.plugged {
+#battery.charging, #battery.plugged, #custom-battery.charging, #custom-battery.plugged {
     color: #FFFFFF;
     background-color: #6C654D;
 }
@@ -97,7 +98,7 @@ window#waybar.hidden {
     }
 }
 
-#battery.critical:not(.charging) {
+#battery.critical:not(.charging), #custom-battery.critical:not(.charging) {
     background-color: #3A4542;
     color: #FFFFFF;
     animation-name: blink;
