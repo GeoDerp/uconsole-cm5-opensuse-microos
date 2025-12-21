@@ -14,7 +14,9 @@ fi
 REMOTE="$1"
 shift
 
-OVERLAYS_DIR="$(pwd)/kernel-patch/arch/arm/boot/dts/overlays"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+OVERLAYS_DIR="$REPO_ROOT/overlays"
 NAMES=""
 REBOOT=0
 
