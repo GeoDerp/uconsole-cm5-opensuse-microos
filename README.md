@@ -67,15 +67,20 @@ ssh user@ip "sudo systemctl enable axp221-configure-pek.service uconsole-backlig
 ```
 
 ### 6. Configure User Session (Sway)
-MicroOS boots to a TTY by default. Configure Sway to start automatically upon login.
+MicroOS boots to a TTY by default. Configure Sway to start automatically upon login to TTY1.
 ```bash
-# Copy Sway user service
-ssh user@ip "mkdir -p ~/.config/systemd/user/"
-scp overlay/home/geo/.config/systemd/user/sway.service user@ip:~/.config/systemd/user/
+# Add auto-start logic to .bash_profile
+ssh user@ip "cat >> ~/.bash_profile << 'EOF'
 
-# Enable service
-ssh user@ip "systemctl --user enable sway.service"
+# Auto-start Sway on TTY1
+if [ -z \"\$WAYLAND_DISPLAY\" ] && [ \"\$XDG_VTNR\" = \"1\" ]; then
+    export XDG_RUNTIME_DIR=\"/run/user/\$(id -u)\"
+    export LIBSEAT_BACKEND=seatd
+    exec sway
+fi
+EOF"
 ```
+*Alternatively, you can run `./scripts/install-sway-uconsole.sh` on the device, which automates this and installs Sway/Waybar/Config.*
 
 ### 7. Finalize
 Reboot the device.
