@@ -133,6 +133,7 @@ The uConsole CM5 (Compute Module 5) introduces significant architectural changes
 *   **Build:** We run the build process *inside* a `transactional-update run` shell (`scripts/deploy_and_build_drivers_snapshot.sh`). This allows writing to `/lib/modules` in a new snapshot.
 *   **Persistence:** We backup the compiled `.ko` files to `/var/lib/modules-overlay/`.
 *   **Boot Fallback:** The `uconsole-backlight-init.sh` script uses a robust `load_module` function. It attempts `modprobe` first (standard path). If that fails (e.g., after a kernel upgrade where modules are missing), it falls back to `insmod` using the preserved files in `/var/lib/modules-overlay/`. This ensures the display works even if the kernel driver database is desynchronized.
+*   **Kernel Upgrades:** When the system kernel is updated (via `transactional-update up`), the binary drivers in `/lib/modules` will become obsolete. You **must** re-run `./scripts/deploy_and_build_drivers_snapshot.sh` to rebuild the drivers for the new kernel version. The fallback mechanism will keep the display alive to allow this maintenance.
 
 
 ## Known Limitations
@@ -143,6 +144,8 @@ The uConsole CM5 (Compute Module 5) introduces significant architectural changes
     *   **Sleep:** Fails due to missing RTC driver (`/dev/rtc0` not found).
     *   **Hibernate:** Fails due to no Swap space configured.
     *   *Workaround:* Use **Shutdown** (Power Off) to save battery. Boot time is fast.
+*   **MicroSD Card Slot:** **Not functional.** The external SD card slot on the uConsole mainboard is not currently detected by the CM5/RP1 configuration.
+*   **USB Devices:** Working (Keyboard, Trackball, External Storage).
 
 ## Todo
 - [ ] smooth out trackball
