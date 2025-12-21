@@ -47,11 +47,40 @@ fi
 # Rebind AXP driver
 echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/bind 2>/dev/null
 
+# Function to robustly load modules (fallback to insmod from overlay)
+load_module() {
+    local mod_name="$1"
+    # Normalize name (replace - with _)
+    local mod_file_name="${mod_name//-/_}.ko"
+    
+    echo "Attempting to load $mod_name..."
+    
+    if /usr/sbin/modprobe "$mod_name" 2>/dev/null; then
+        echo "  Loaded via modprobe."
+        return 0
+    fi
+    
+    echo "  modprobe failed. Trying insmod from overlay..."
+    local overlay_path="/var/lib/modules-overlay/$mod_file_name"
+    
+    if [ -f "$overlay_path" ]; then
+        if /usr/sbin/insmod "$overlay_path" 2>/dev/null; then
+            echo "  Loaded via insmod ($overlay_path)."
+            return 0
+        else
+            echo "  Failed to insmod $overlay_path."
+        fi
+    else
+        echo "  Overlay file not found: $overlay_path"
+    fi
+    return 1
+}
+
 # Explicitly load display and backlight drivers
 echo "Loading display drivers..."
-/usr/sbin/modprobe panel_cwu50 2>/dev/null
-/usr/sbin/modprobe drm_rp1_dsi 2>/dev/null
-/usr/sbin/modprobe ocp8178_bl 2>/dev/null
+load_module panel_cwu50
+load_module drm_rp1_dsi
+load_module ocp8178_bl
 
 # Set brightness - assuming backlight driver will load and create device
 if [ -e /sys/class/backlight/backlight@0/brightness ]; then

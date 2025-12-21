@@ -98,6 +98,21 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
 *   **Locked:** The screen is likely just locked by Swaylock. Type your password and press Enter.
 *   **Backlight Off:** If `dmesg` says backlight is on but screen is dark, reload the driver: `sudo rmmod ocp8178_bl && sudo modprobe ocp8178_bl`.
 
+## Hardware Differences: CM4 vs CM5
+
+The uConsole CM5 (Compute Module 5) introduces significant architectural changes compared to the CM4 version.
+
+1.  **PMIC Integration:**
+    *   **CM4:** Uses the **AXP228** PMIC.
+    *   **CM5:** Uses the **AXP221** PMIC. While similar, register definitions for IRQs and power control differ slightly. The CM5 requires specific handling for the "Power Button" interrupt to avoid boot loops.
+
+2.  **Display Pipeline (DSI):**
+    *   **CM4:** Uses the standard **VC4** (VideoCore 4) DRM driver.
+    *   **CM5:** Uses the Raspberry Pi 5 **RP1** I/O controller. The DSI interface is managed by the `drm-rp1-dsi` driver, which is distinct from the VC4 pipeline. This requires a specific kernel module (`drm_rp1_dsi`) not present in mainline kernels yet.
+
+3.  **Panel Voltage:**
+    *   The **CWU50** panel on the CM5 adapter board requires a **3.3V** supply on `aldo2`. The default (or CM4-derived) configuration often sets this to 1.8V, causing the panel controller to crash or fail initialization. This is fixed via the `clockworkpi-uconsole-cm5.dtbo` overlay.
+
 ## Lessons Learnt & Architecture
 
 ### 1. Display Reset Race Condition
@@ -111,6 +126,13 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
 ### 3. Driver Unbind Crash
 **Problem:** The standard `shutdown` command attempts to unbind device drivers. Unbinding the AXP20x I2C driver kills all child regulators immediately, cutting power to the CPU/RAM before the filesystem syncs.
 **Solution:** The `axp221-poweroff.sh` script uses `i2cset -f` (Force Mode) to write the shutdown command directly to the PMIC *without* unbinding the driver. This maintains system power stability until the very last moment.
+
+### 4. MicroOS Driver Persistence
+**Problem:** openSUSE MicroOS has a read-only root filesystem and manages kernel updates via snapshots. Standard `make install` fails because `/lib/modules` is read-only during runtime.
+**Solution:**
+*   **Build:** We run the build process *inside* a `transactional-update run` shell (`scripts/deploy_and_build_drivers_snapshot.sh`). This allows writing to `/lib/modules` in a new snapshot.
+*   **Persistence:** We backup the compiled `.ko` files to `/var/lib/modules-overlay/`.
+*   **Boot Fallback:** The `uconsole-backlight-init.sh` script uses a robust `load_module` function. It attempts `modprobe` first (standard path). If that fails (e.g., after a kernel upgrade where modules are missing), it falls back to `insmod` using the preserved files in `/var/lib/modules-overlay/`. This ensures the display works even if the kernel driver database is desynchronized.
 
 
 ## Known Limitations
