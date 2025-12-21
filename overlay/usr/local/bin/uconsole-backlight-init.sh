@@ -80,7 +80,15 @@ load_module() {
 echo "Loading display drivers..."
 load_module panel_cwu50
 load_module drm_rp1_dsi
-load_module ocp8178_bl
+
+# Load backlight driver (OCP8178) with reload workaround
+# The driver occasionally desyncs on first load (Hardware OFF, Kernel ON).
+# Reloading it forces the 1-wire entry sequence to run again, ensuring sync.
+if load_module ocp8178_bl; then
+    echo "Reloading ocp8178_bl to fix desync..."
+    /usr/sbin/rmmod ocp8178_bl 2>/dev/null
+    load_module ocp8178_bl
+fi
 
 # Set brightness - assuming backlight driver will load and create device
 if [ -e /sys/class/backlight/backlight@0/brightness ]; then
