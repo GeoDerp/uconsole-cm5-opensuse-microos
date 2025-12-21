@@ -123,5 +123,14 @@ If the device shuts down immediately after boot (Power Button Monitor false posi
     *   *Workaround:* Use **Shutdown** (Power Off) to save battery. Boot time is fast.
 
 ## Todo
-- [ ] battery level on waybar (via i2cget)
-- [ ] smoth out tracball
+- [ ] smooth out trackball
+
+## Credits
+- **Rex & The ClockworkPi Community:** For the initial CM5 hardware investigation and device tree overlays.
+- **ClockworkPi:** For the uConsole hardware.
+- **openSUSE:** For the MicroOS platform.
+- **Raspberry Pi:** For the RP1 drivers and CM5 support.
+
+## License
+The scripts and configurations in this repository are open source.
+The kernel drivers in `extracted-drivers/` are derived from the Linux Kernel and Raspberry Pi kernel source, licensed under **GPL-2.0-or-later**.

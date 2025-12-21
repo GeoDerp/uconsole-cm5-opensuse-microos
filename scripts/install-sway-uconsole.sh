@@ -325,23 +325,11 @@ SEATDSERVICE
     log_success "seatd service configured"
 }
 
-# Setup autologin and auto-start sway
-setup_autologin() {
-    local CURRENT_USER="${SUDO_USER:-$USER}"
-    
-    log_info "Setting up autologin for $CURRENT_USER on TTY1..."
-    
-    # Create autologin override for getty@tty1
-    sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
-    sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf > /dev/null << EOF
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin $CURRENT_USER --noclear %I \$TERM
-EOF
-    
-    # Create .bash_profile for auto-starting sway (avoid duplicates)
+# Setup auto-start sway on login
+setup_sway_autostart() {
     log_info "Configuring auto-start Sway on login..."
     
+    # Create .bash_profile for auto-starting sway (avoid duplicates)
     if ! grep -q "Auto-start Sway" "$HOME/.bash_profile" 2>/dev/null; then
         cat >> "$HOME/.bash_profile" << 'BASHPROFILE'
 
@@ -354,7 +342,7 @@ fi
 BASHPROFILE
     fi
     
-    log_success "Autologin and auto-start configured"
+    log_success "Sway configured to start after login on TTY1"
 }
 
 # Print post-install instructions
@@ -424,7 +412,7 @@ main() {
     download_configs
     setup_wallpaper
     setup_seatd
-    setup_autologin
+    setup_sway_autostart
     setup_wpgtk
     
     print_instructions
