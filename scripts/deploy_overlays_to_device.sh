@@ -73,20 +73,20 @@ for dtbo in "${DTBOS[@]}"; do
   echo "Installing $dtbo on remote"
   # attempt to place overlay into boot overlays; on transactional/readonly systems this may fail
   set +e
-  ssh_exec "sudo bash -eux -c \"mkdir -p /boot/vc/overlays && (mountpoint -q /boot/vc && mount -o remount,rw /boot/vc) || true && if [ -f /boot/vc/overlays/$dtbo ]; then cp -a /boot/vc/overlays/$dtbo /boot/vc/overlays/$dtbo.bak.\$(date +%s); fi && mv $tmp /boot/vc/overlays/$dtbo && chmod 644 /boot/vc/overlays/$dtbo && sync\""
+  ssh_exec "sudo bash -eux -c \"mkdir -p /boot/efi/overlays && (mountpoint -q /boot/efi && mount -o remount,rw /boot/efi) || true && if [ -f /boot/efi/overlays/$dtbo ]; then cp -a /boot/efi/overlays/$dtbo /boot/efi/overlays/$dtbo.bak.\$(date +%s); fi && mv $tmp /boot/efi/overlays/$dtbo && chmod 644 /boot/efi/overlays/$dtbo && sync\""
   rc=$?
   set -e
   if [ $rc -eq 0 ]; then
-    echo "Installed $dtbo to /boot/vc/overlays"
+    echo "Installed $dtbo to /boot/efi/overlays"
   else
-    echo "Warning: unable to install $dtbo into /boot/vc/overlays (rc=$rc). Falling back to /root/overlays on remote for manual action."
+    echo "Warning: unable to install $dtbo into /boot/efi/overlays (rc=$rc). Falling back to /root/overlays on remote for manual action."
     ssh_exec "sudo mkdir -p /root/overlays && sudo mv $tmp /root/overlays/$dtbo && sudo chmod 644 /root/overlays/$dtbo && sudo chown root:root /root/overlays/$dtbo || true"
-    echo "Placed $dtbo at /root/overlays/$dtbo on remote. You will need to install it into /boot/vc/overlays (image is likely transactional/readonly)."
+    echo "Placed $dtbo at /root/overlays/$dtbo on remote. You will need to install it into /boot/efi/overlays (image is likely transactional/readonly)."
   fi
 done
 
-# Update /boot/vc/extraconfig.txt to include dtoverlay lines
-EXTRA_RCPT="/boot/vc/extraconfig.txt"
+# Update /boot/efi/extraconfig.txt to include dtoverlay lines
+EXTRA_RCPT="/boot/efi/extraconfig.txt"
 TMP_REMOTE="/tmp/extraconfig.txt.tmp"
 echo "Updating remote $EXTRA_RCPT with dtoverlay entries"
 
