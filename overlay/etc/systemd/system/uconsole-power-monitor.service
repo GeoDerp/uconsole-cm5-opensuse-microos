@@ -1,0 +1,12 @@
+[Unit]
+Description=uConsole Battery Safety Monitor
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/uconsole-power-monitor.sh
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

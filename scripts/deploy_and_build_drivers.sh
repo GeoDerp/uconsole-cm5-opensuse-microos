@@ -66,11 +66,19 @@ for d in *; do
       sudo make -C /lib/modules/$KVER/build M=$(pwd) modules
       # install modules if created
       if ls *.ko >/dev/null 2>&1; then
+        # Try to install to standard path (will fail on Read-Only FS like MicroOS)
         sudo mkdir -p /lib/modules/$KVER/extra
-        sudo cp -v *.ko /lib/modules/$KVER/extra || true
-        # Also copy to /var/lib/modules-overlay for MicroOS persistence
+        if sudo cp -v *.ko /lib/modules/$KVER/extra 2>/dev/null; then
+             echo "Installed to /lib/modules/$KVER/extra"
+        else
+             echo "NOTE: Could not write to /lib/modules (Read-Only FS). This is expected on MicroOS."
+        fi
+        
+        # Copy to /var/lib/modules-overlay for MicroOS persistence (used by uconsole-backlight-init.sh)
         sudo mkdir -p /var/lib/modules-overlay
         sudo cp -v *.ko /var/lib/modules-overlay/ || true
+        # Fix SELinux context for the overlay modules
+        sudo restorecon -v /var/lib/modules-overlay/*.ko || true
       fi
       popd >/dev/null
     fi
@@ -80,8 +88,8 @@ echo "Running depmod and loading modules where appropriate"
 sudo depmod -a
 REMOTE
 
-echo "Attempting to load uconsole-related modules: ocp8178_bl, panel-cwd686, panel-cwu50, axp20x_ac_power, axp20x_battery"
-for mod in ocp8178_bl panel-cwd686 panel-cwu50 axp20x_ac_power axp20x_battery; do
+echo "Attempting to load uconsole-related modules: uconsole_fixup, ocp8178_bl, panel-cwd686, panel-cwu50, axp20x_ac_power, axp20x_battery"
+for mod in uconsole_fixup ocp8178_bl panel-cwd686 panel-cwu50 axp20x_ac_power axp20x_battery; do
   ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$DEST_USER@$DEST_HOST" "sudo modprobe $mod || echo 'modprobe $mod failed'"
 done
 

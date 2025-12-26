@@ -58,29 +58,29 @@ echo "[3/5] Copying files to target device..."
 scp $SSH_OPTS -i "$SSH_KEY" /tmp/merged-clockworkpi-fixed.dtb "$DEST_USER@$DEST_HOST:/home/$DEST_USER/"
 scp $SSH_OPTS -i "$SSH_KEY" /tmp/rp1-i2c1-fix.dtbo "$DEST_USER@$DEST_HOST:/home/$DEST_USER/"
 
-# Write files into /boot/vc using transactional-update
-echo "[4/5] Installing files into /boot/vc via transactional-update..."
-ssh $SSH_OPTS -i "$SSH_KEY" "$DEST_USER@$DEST_HOST" "sudo transactional-update run /bin/sh -c '
+# Write files into /boot/efi (FAT partition, writable)
+echo "[4/5] Installing files into /boot/efi..."
+ssh $SSH_OPTS -i "$SSH_KEY" "$DEST_USER@$DEST_HOST" "sudo sh -c '
   set -e
-  mkdir -p /boot/vc/overlays
-  cp /home/$DEST_USER/merged-clockworkpi-fixed.dtb /boot/vc/merged-clockworkpi.dtb
-  cp /home/$DEST_USER/rp1-i2c1-fix.dtbo /boot/vc/overlays/rp1-i2c1-fix.dtbo
+  mkdir -p /boot/efi/overlays
+  cp /home/$DEST_USER/merged-clockworkpi-fixed.dtb /boot/efi/merged-clockworkpi.dtb
+  cp /home/$DEST_USER/rp1-i2c1-fix.dtbo /boot/efi/overlays/rp1-i2c1-fix.dtbo
   echo \"=== Files installed ===\"
-  sha256sum /boot/vc/merged-clockworkpi.dtb
-  sha256sum /boot/vc/overlays/rp1-i2c1-fix.dtbo
+  sha256sum /boot/efi/merged-clockworkpi.dtb
+  sha256sum /boot/efi/overlays/rp1-i2c1-fix.dtbo
 '"
 
 # Update extraconfig.txt with minimal required settings
 echo "[5/5] Updating extraconfig.txt..."
-ssh $SSH_OPTS -i "$SSH_KEY" "$DEST_USER@$DEST_HOST" "sudo transactional-update run /bin/sh -c '
+ssh $SSH_OPTS -i "$SSH_KEY" "$DEST_USER@$DEST_HOST" "sudo sh -c '
   set -e
   # Backup original extraconfig if not already backed up
-  if [ ! -f /boot/vc/extraconfig.txt.orig ]; then
-    cp /boot/vc/extraconfig.txt /boot/vc/extraconfig.txt.orig 2>/dev/null || true
+  if [ ! -f /boot/efi/extraconfig.txt.orig ]; then
+    cp /boot/efi/extraconfig.txt /boot/efi/extraconfig.txt.orig 2>/dev/null || true
   fi
   
   # Create clean extraconfig.txt with only necessary settings
-  cat > /boot/vc/extraconfig.txt << EOF
+  cat > /boot/efi/extraconfig.txt << EOF
 # uConsole CM5 configuration
 # Use the merged DTB with all hardware configuration
 device_tree=merged-clockworkpi.dtb
@@ -93,7 +93,7 @@ dtoverlay=rp1-i2c1-fix
 EOF
 
   echo \"=== extraconfig.txt updated ===\"
-  cat /boot/vc/extraconfig.txt
+  cat /boot/efi/extraconfig.txt
 '"
 
 # Install dtc if requested

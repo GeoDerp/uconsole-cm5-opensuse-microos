@@ -2972,7 +2972,13 @@
 			 * interrupt-controller;
 			 */
 			reg = <0x34>;
-			compatible = "x-powers,axp221";
+			compatible = "x-powers,axp221", "simple-mfd";
+			system-power-controller;
+
+			adc {
+				compatible = "x-powers,axp221-adc";
+				#io-channel-cells = <0x01>;
+			};
 
 			ac_power_supply {
 				phandle = <0x119>;

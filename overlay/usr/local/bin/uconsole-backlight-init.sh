@@ -3,49 +3,13 @@
 # This script is run at boot by uconsole-backlight.service
 set -x
 
-# Ensure i2c-dev is loaded for power cycling
+# Ensure i2c-dev is loaded
 /usr/sbin/modprobe i2c-dev 2>/dev/null
 
 # Fix SELinux context for custom modules (MicroOS has SELinux)
 for ko in /var/lib/modules-overlay/*.ko; do
     [ -f "$ko" ] && chcon -t modules_object_t "$ko" 2>/dev/null
 done
-
-# Load dependencies (AXP drivers) - other modules handled by modprobe.d
-/usr/sbin/modprobe industrialio 2>/dev/null
-/usr/sbin/modprobe axp20x_adc 2>/dev/null
-/usr/sbin/modprobe axp20x_ac_power 2>/dev/null
-/usr/sbin/modprobe axp20x_battery 2>/dev/null
-
-# Unload display drivers before power cycle to prevent desync
-echo "Unloading display drivers..."
-/usr/sbin/modprobe -r panel_cwu50 drm_rp1_dsi ocp8178_bl 2>/dev/null
-
-# Power Cycle Display (ALDO2)
-# Unbind AXP driver first to release I2C address
-if [ -d /sys/bus/i2c/drivers/axp20x-i2c ]; then
-    echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/unbind 2>/dev/null
-fi
-
-# Toggle ALDO2
-VAL=$(/usr/sbin/i2cget -y -f 13 0x34 0x10 2>/dev/null)
-if [ -n "$VAL" ]; then
-    # Clear bit 2 (0xFB mask)
-    OFF_VAL=$(printf "0x%X" $(( $VAL & 0xFB )))
-    # Set bit 2 (0x04 mask)
-    ON_VAL=$(printf "0x%X" $(( $VAL | 0x04 )))
-
-    echo "Power cycling display (ALDO2)..."
-    /usr/sbin/i2cset -y -f 13 0x34 0x10 $OFF_VAL
-    sleep 1
-    /usr/sbin/i2cset -y -f 13 0x34 0x10 $ON_VAL
-    sleep 0.5
-else
-    echo "WARNING: Failed to read PMIC via I2C. Skipping power cycle."
-fi
-
-# Rebind AXP driver
-echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/bind 2>/dev/null
 
 # Function to robustly load modules (fallback to insmod from overlay)
 load_module() {
@@ -76,19 +40,50 @@ load_module() {
     return 1
 }
 
+# Power Cycle Display (ALDO2) - Force regulator toggle via I2C to reset panel
+# This is required because the panel controller needs a hard voltage reset
+# and regulator_enable() is a no-op if already on.
+VAL=$(/usr/sbin/i2cget -y -f 13 0x34 0x10 2>/dev/null)
+if [ -n "$VAL" ]; then
+    # Clear bit 2 (0xFB mask)
+    OFF_VAL=$(printf "0x%X" $(( $VAL & 0xFB )))
+    # Set bit 2 (0x04 mask)
+    ON_VAL=$(printf "0x%X" $(( $VAL | 0x04 )))
+
+    echo "Power cycling display (ALDO2)..."
+    /usr/sbin/i2cset -y -f 13 0x34 0x10 $OFF_VAL
+    sleep 1
+    /usr/sbin/i2cset -y -f 13 0x34 0x10 $ON_VAL
+    sleep 0.5
+else
+    echo "WARNING: Failed to read PMIC via I2C. Skipping power cycle."
+fi
+
 # Explicitly load display and backlight drivers
-echo "Loading display drivers..."
+echo "Loading display drivers (First to ensure regulators work)..."
 load_module panel_cwu50
 load_module drm_rp1_dsi
 
 # Load backlight driver (OCP8178) with reload workaround
-# The driver occasionally desyncs on first load (Hardware OFF, Kernel ON).
-# Reloading it forces the 1-wire entry sequence to run again, ensuring sync.
 if load_module ocp8178_bl; then
     echo "Reloading ocp8178_bl to fix desync..."
     /usr/sbin/rmmod ocp8178_bl 2>/dev/null
     load_module ocp8178_bl
 fi
+
+# Allow display init to settle before stressing I2C with battery polling
+sleep 2
+
+echo "Loading AXP and Fixup drivers..."
+/usr/sbin/modprobe industrialio 2>/dev/null
+/usr/sbin/modprobe axp20x_adc 2>/dev/null
+
+# Load fixup module to instantiate AXP221 children (ADC, Battery)
+load_module uconsole_fixup
+
+# Load Battery Drivers
+/usr/sbin/modprobe axp20x_ac_power 2>/dev/null
+/usr/sbin/modprobe axp20x_battery 2>/dev/null
 
 # Set brightness - assuming backlight driver will load and create device
 if [ -e /sys/class/backlight/backlight@0/brightness ]; then
