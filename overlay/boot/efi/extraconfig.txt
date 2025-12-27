@@ -13,5 +13,5 @@ dtoverlay=clockworkpi-uconsole-cm5
 dtoverlay=uconsole-audio
 dtoverlay=uconsole-sd-alt
 
-# GPU Acceleration (Required for Wayland/Sway)
-dtoverlay=vc4-kms-v3d-pi5,cma-384
+# Enable GPU Acceleration (V3D) with increased CMA for compositors
+dtoverlay=vc4-kms-v3d-pi5,cma-512
