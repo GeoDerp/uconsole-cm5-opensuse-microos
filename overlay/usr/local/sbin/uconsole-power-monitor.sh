@@ -12,6 +12,21 @@ FAIL_COUNT=0
 
 logger -t power-monitor "Starting uConsole power monitor..."
 
+# Wait for battery path to appear (up to 120s)
+WAIT_SEC=0
+while [ ! -d "$BAT_PATH" ] && [ $WAIT_SEC -lt 120 ]; do
+    sleep 5
+    WAIT_SEC=$((WAIT_SEC+5))
+    logger -t power-monitor "Waiting for battery sensor... ($WAIT_SEC/120s)"
+done
+
+if [ ! -d "$BAT_PATH" ]; then
+    logger -s -p crit -t power-monitor "FATAL: Battery sensor not found after timeout. Forcing shutdown for safety."
+    sync
+    systemctl poweroff
+    exit 1
+fi
+
 while true; do
     if [ -d "$BAT_PATH" ]; then
         STATUS=$(cat "$BAT_PATH/status" 2>/dev/null)
@@ -20,7 +35,8 @@ while true; do
 
         if [ -z "$STATUS" ] || [ -z "$CAP" ]; then
             FAIL_COUNT=$((FAIL_COUNT+1))
-            logger -t power-monitor "Warning: Failed to read battery sensor (Attempt $FAIL_COUNT/3)"
+            logger -t power-monitor "Warning: Failed to read battery sensor (Attempt $FAIL_COUNT/6)"
+            sleep 5 # Extra delay to let I2C bus recover
         else
             FAIL_COUNT=0 # Reset counter on success
 
@@ -43,11 +59,11 @@ while true; do
         fi
     else
         FAIL_COUNT=$((FAIL_COUNT+1))
-        logger -t power-monitor "Battery device not found! (Attempt $FAIL_COUNT/3)"
+        logger -t power-monitor "Battery device not found! (Attempt $FAIL_COUNT/6)"
     fi
 
-    if [ "$FAIL_COUNT" -ge 3 ]; then
-        logger -s -p crit -t power-monitor "CRITICAL: Battery sensor lost (Potential Brownout). Forcing shutdown to protect hardware."
+    if [ "$FAIL_COUNT" -ge 6 ]; then
+        logger -s -p crit -t power-monitor "CRITICAL: Battery sensor lost consistently (Potential hardware deadlock). Forcing shutdown."
         sync
         systemctl poweroff
         exit 0

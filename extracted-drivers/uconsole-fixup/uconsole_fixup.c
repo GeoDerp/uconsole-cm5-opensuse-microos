@@ -8,16 +8,25 @@ static struct platform_device *adc_pdev;
 static struct platform_device *bat_pdev;
 static struct platform_device *ac_pdev;
 
+static int is_axp221(struct device *dev, const void *data)
+{
+    struct i2c_client *client = i2c_verify_client(dev);
+    if (!client)
+        return 0;
+    
+    return of_device_is_compatible(client->dev.of_node, "x-powers,axp221");
+}
+
 static int __init uconsole_fixup_init(void)
 {
     struct device *parent;
     struct device_node *np;
     struct device_node *child;
 
-    // Find the AXP221 I2C client. 
-    parent = bus_find_device_by_name(&i2c_bus_type, NULL, "13-0034");
+    // Find the AXP221 I2C client robustly
+    parent = bus_find_device(&i2c_bus_type, NULL, NULL, is_axp221);
     if (!parent) {
-        pr_err("uconsole-fixup: Could not find AXP221 I2C device 13-0034\n");
+        pr_err("uconsole-fixup: Could not find AXP221 I2C device by compatible string\n");
         return -ENODEV;
     }
     
@@ -69,7 +78,9 @@ static int __init uconsole_fixup_init(void)
         }
     }
 
-    // --- Create AC Power device ---
+    /* --- Create AC Power device ---
+     * Disabled: Causes IRQ error spam on TTY because IRQ resources are not 
+     * correctly passed to manually registered platform device.
     ac_pdev = platform_device_alloc("axp20x-ac-power-supply", -1);
     if (ac_pdev) {
         ac_pdev->dev.parent = parent;
@@ -90,6 +101,7 @@ static int __init uconsole_fixup_init(void)
             pr_info("uconsole-fixup: Registered axp20x-ac-power-supply\n");
         }
     }
+    */
 
     put_device(parent);
     return 0;

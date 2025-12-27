@@ -10,9 +10,10 @@ This repository contains the drivers, device tree overlays, and configuration sc
 |---------|--------|-------------|
 | **Display** | ✅ Stable | **Pin Swap Overlay:** Forces driver to use correct reset logic. **Voltage:** Set to 3.3V (`aldo2`). |
 | **Backlight** | ✅ Working | patched driver handles initialization logic. |
-| **Power Button (Hold)** | ✅ Working | Hardware Hard-Off set to **4 Seconds** via PMIC register. |
-| **Power Button (Tap)** | ❌ Disabled | Disabled due to hardware IRQ stuck-high fault on this unit. |
-| **Shutdown** | ✅ Safe | Custom script forces PMIC shutdown via I2C, preventing regulator crashes. |
+| **Power Button (Hold)** | ⚠️ Limited | Physical 6s hold unreliable on this unit due to **stuck hardware interrupts** (Reg 0x44=0xFF). |
+| **Power Button (Tap)** | ❌ Disabled | Disabled to prevent infinite shutdown loops on faulty IRQ hardware. |
+| **Shutdown** | ✅ Aggressive | Forced PMIC shutdown via I2C (`axp221-poweroff.sh`) unbinds driver to bypass I2C bus locks. |
+| **Battery Safety** | ✅ Active | Background monitor (`uconsole-power-monitor`) force-shuts down at 8% or on sensor loss. |
 | **Boot Reliability** | ✅ Stable | BTRFS maintenance timers masked to prevent I/O storms and display underflows. |
 
 ## Installation (Fresh Install)

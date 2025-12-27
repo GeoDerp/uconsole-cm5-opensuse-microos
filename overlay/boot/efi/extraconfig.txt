@@ -1,16 +1,17 @@
-# uConsole CM5 configuration for boot/efi/extraconfig.txt
-# This file should be copied to /boot/efi/extraconfig.txt on the target
+# uConsole CM5 Configuration
 
-# Use the uConsole-specific device tree
-device_tree=merged-clockworkpi.dtb
+# Use stock RPi CM5 Device Tree (Stable GPU/PCIe support)
+device_tree=bcm2712-rpi-cm5-cm5io.dtb
 
-# Enable USB VBUS (power) for USB ports
+# Core Overlays
+dtoverlay=rp1-i2c1-fix
 dtoverlay=usb-vbus-hog
-
-# Audio overlay (SPDIF/I2S output)
-dtoverlay=uconsole-audio
-
-# Enable DWC2 USB controller in host mode for internal keyboard/trackball
-# The CM5 has DWC2 disabled by default, but the uConsole mainboard connects
-# the internal USB hub (with keyboard/trackball) to this legacy USB path
 dtoverlay=dwc2,dr_mode=host
+
+# uConsole Specifics
+dtoverlay=clockworkpi-uconsole-cm5
+dtoverlay=uconsole-audio
+dtoverlay=uconsole-sd-alt
+
+# GPU Acceleration (Required for Wayland/Sway)
+dtoverlay=vc4-kms-v3d-pi5,cma-384

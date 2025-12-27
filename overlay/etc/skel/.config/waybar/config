@@ -15,7 +15,7 @@
         "memory",
         "temperature",
         "backlight",
-        "custom/battery",
+        "battery",
         "clock",
         "tray"
     ],
@@ -63,12 +63,18 @@
         "on-scroll-down": "brightnessctl -q set 1-"
     },
 
-    "custom/battery": {
-        "exec": "/usr/local/bin/uconsole-battery.sh",
-        "return-type": "json",
-        "interval": 30,
-        "format": "{}",
-        "tooltip": true
+    "battery": {
+        "bat": "axp20x-battery",
+        "interval": 60,
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{capacity}% {icon}",
+        "format-charging": "{capacity}% ◴",
+        "format-plugged": "{capacity}% ",
+        "format-alt": "{time} {icon}",
+        "format-icons": ["", "", "", "", ""]
     },
 
     "network": {

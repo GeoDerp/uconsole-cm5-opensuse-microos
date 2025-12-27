@@ -88,8 +88,8 @@ device_tree=merged-clockworkpi.dtb
 # Enable RP1 I2C1 pin fix overlay for proper pinctrl
 dtoverlay=rp1-i2c1-fix
 
-# Optional: uncomment if using display via DSI
-# dtoverlay=vc4-kms-v3d-pi5
+# Enable GPU Acceleration (V3D) with increased CMA for compositors
+dtoverlay=vc4-kms-v3d-pi5,cma-384
 EOF
 
   echo \"=== extraconfig.txt updated ===\"

@@ -26,6 +26,7 @@ output DSI-1 {
     mode 720x1280
     transform 90
     scale 1
+    max_render_time off
     bg $HOME/.config/sway/wallpaper.jpg fill
 }
 

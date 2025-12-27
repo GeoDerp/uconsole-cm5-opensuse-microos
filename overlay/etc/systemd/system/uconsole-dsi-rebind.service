@@ -1,0 +1,11 @@
+[Unit]
+Description=Attempt to rebind RP1 DSI driver if panel not connected
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/uconsole-dsi-rebind.sh
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target

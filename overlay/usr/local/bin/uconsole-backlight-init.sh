@@ -85,6 +85,10 @@ load_module uconsole_fixup
 /usr/sbin/modprobe axp20x_ac_power 2>/dev/null
 /usr/sbin/modprobe axp20x_battery 2>/dev/null
 
+# Load Audio Drivers
+/usr/sbin/modprobe snd_soc_simple_card 2>/dev/null
+load_module snd_soc_rp1_aout
+
 # Set brightness - assuming backlight driver will load and create device
 if [ -e /sys/class/backlight/backlight@0/brightness ]; then
     echo 8 > /sys/class/backlight/backlight@0/brightness 2>/dev/null
