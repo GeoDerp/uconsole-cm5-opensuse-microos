@@ -8,13 +8,15 @@ This repository contains the drivers, device tree overlays, and configuration sc
 
 | Feature | Status | Fix Details |
 |---------|--------|-------------|
-| **Display** | ✅ Stable | **Pin Swap Overlay:** Forces driver to use correct reset logic. **Voltage:** Set to 3.3V (`aldo2`). |
-| **Backlight** | ✅ Working | patched driver handles initialization logic. |
-| **Power Button (Hold)** | ⚠️ Limited | Physical 6s hold unreliable on this unit due to **stuck hardware interrupts** (Reg 0x44=0xFF). |
-| **Power Button (Tap)** | ❌ Disabled | Disabled to prevent infinite shutdown loops on faulty IRQ hardware. |
+| **Display** | ✅ Stable | **Relaxed Timings:** Htotal increased to 1100 to eliminate DSI Underflow errors. **Voltage:** Set to 3.3V (`aldo2`). |
+| **Graphics**| ⚠️ Software | **Tearing Fix:** Use `pixman` renderer and disable hardware cursors in Sway. V3D Hardware acceleration still unstable (-110 timeout). |
+| **Audio**   | ✅ Working | **Simple-Card:** Enabled via `spdif-transmitter` and `simple-audio-card` nodes in DTS. |
+| **Battery** | ✅ Functional | **AXP20x Battery:** Enabled via `uconsole_fixup` kernel module to populate sysfs. |
+| **Input**   | ✅ Working | **DWC2:** Enabled in DTS to support internal keyboard/trackball hub. |
+| **Power Button** | ⚠️ Limited | Physical 6s hold unreliable on this unit due to **stuck hardware interrupts** (Reg 0x44=0xFF). |
 | **Shutdown** | ✅ Aggressive | Forced PMIC shutdown via I2C (`axp221-poweroff.sh`) unbinds driver to bypass I2C bus locks. |
-| **Battery Safety** | ✅ Active | Background monitor (`uconsole-power-monitor`) force-shuts down at 8% or on sensor loss. |
-| **Boot Reliability** | ✅ Stable | BTRFS maintenance timers masked to prevent I/O storms and display underflows. |
+| **Battery Safety**| ✅ Active | Background monitor (`uconsole-power-monitor`) force-shuts down at 8% or on sensor loss. |
+| **Boot Reliability**| ✅ Stable | BTRFS maintenance timers masked to prevent I/O storms and display underflows. |
 
 ## Installation (Fresh Install)
 
@@ -141,6 +143,18 @@ The uConsole CM5 (Compute Module 5) introduces significant architectural changes
 *   **Boot Fallback:** The `uconsole-backlight-init.sh` script uses a robust `load_module` function. It attempts `modprobe` first (standard path). If that fails (e.g., after a kernel upgrade where modules are missing), it falls back to `insmod` using the preserved files in `/var/lib/modules-overlay/`. This ensures the display works even if the kernel driver database is desynchronized.
 *   **Kernel Upgrades:** When the system kernel is updated (via `transactional-update up`), the binary drivers in `/lib/modules` will become obsolete. You **must** re-run `./scripts/deploy_and_build_drivers_snapshot.sh` to rebuild the drivers for the new kernel version. The fallback mechanism will keep the display alive to allow this maintenance.
 
+
+### 5. Display Tearing & "Square Glitches"
+**Problem:** Sway/Wayland exhibit massive screen tearing and "square glitches" (corrupted tiles) when opening windows or moving the mouse. This is caused by the RP1 DSI controller timing out (Underflow) or tiling modifier mismatches in the V3D hardware.
+**Solution:**
+1.  **Relaxed Timings:** We increased the horizontal total pixels from 800 to 1100 in the `panel-cwu50` driver. This lowers the refresh rate to ~34Hz but gives the RP1 DMA enough bandwidth to avoid underflows.
+2.  **Software Rendering:** Until the BCM2712 V3D driver stabilizes, we force Sway to use the `pixman` renderer and disable hardware cursors. Add these to your `.bash_profile`:
+    ```bash
+    export WLR_RENDERER=pixman
+    export WLR_NO_HARDWARE_CURSORS=1
+    export WLR_DRM_DEVICES=/dev/dri/card1:/dev/dri/card0
+    ```
+    This provides a completely smooth, tear-free desktop experience.
 
 ## Known Limitations
 
