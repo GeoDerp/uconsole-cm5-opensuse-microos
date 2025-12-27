@@ -1,7 +1,7 @@
 # uConsole CM5 Configuration
 
-# Use stock RPi CM5 Device Tree (Stable GPU/PCIe support)
-device_tree=bcm2712-rpi-cm5-cm5io.dtb
+# Use the uConsole-specific device tree
+device_tree=merged-clockworkpi.dtb
 
 # Core Overlays
 dtoverlay=rp1-i2c1-fix
