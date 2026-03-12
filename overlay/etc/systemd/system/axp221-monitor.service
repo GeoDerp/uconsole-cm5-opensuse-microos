@@ -1,8 +1,8 @@
 [Unit]
 Description=AXP221 Power Button Monitor
 After=sysinit.target axp221-configure-pek.service
-# Ensure i2c tools are available
-Requires=sys-devices-platform-soc-1f00050000.i2c-i2c-13.device
+# I2C bus number is dynamic — script handles detection internally
+Wants=systemd-modules-load.service
 
 [Service]
 Type=simple

@@ -7,7 +7,8 @@
 #include <linux/gpio/consumer.h>
 #include <linux/regulator/consumer.h>
 #include <linux/delay.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
+#include <linux/mod_devicetable.h>
 #include <linux/module.h>
 
 struct cwu50 {
@@ -24,15 +25,15 @@ struct cwu50 {
 };
 
 static const struct drm_display_mode default_mode = {
-	.clock = 50000,
+	.clock = 40000,
 	.hdisplay = 720,
-	.hsync_start = 720 + 150,
-	.hsync_end = 720 + 150 + 30,
-	.htotal = 720 + 150 + 30 + 200,
+	.hsync_start = 720 + 80,
+	.hsync_end = 720 + 80 + 40,
+	.htotal = 720 + 80 + 40 + 80,
 	.vdisplay = 1280,
-	.vsync_start = 1280 + 16,
-	.vsync_end = 1280 + 16 + 8,
-	.vtotal = 1280 + 16 + 8 + 24,
+	.vsync_start = 1280 + 40,
+	.vsync_end = 1280 + 40 + 10,
+	.vtotal = 1280 + 40 + 10 + 40,
 };
 
 static inline struct cwu50 *panel_to_cwu50(struct drm_panel *panel)
@@ -706,16 +707,19 @@ static int cwu50_probe(struct mipi_dsi_device *dsi)
 	struct cwu50 *ctx;
 	int ret, err;
 
+	dev_info(dev, "PROBE START: Hardcoding Right-Up orientation\n");
+
 	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
 
+	ctx->orientation = DRM_MODE_PANEL_ORIENTATION_RIGHT_UP;
 	mipi_dsi_set_drvdata(dsi, ctx);
 	ctx->dev = dev;
 
 	dsi->lanes = 4;
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST;
 
 	ctx->id_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_IN);
 	if (IS_ERR(ctx->id_gpio)) {
@@ -725,12 +729,16 @@ static int cwu50_probe(struct mipi_dsi_device *dsi)
 		return ret;
 	}
 
-	ctx->is_new_panel = gpiod_get_value_cansleep(ctx->id_gpio);
+	ctx->is_new_panel = false;
+	dev_info(dev, "Forced old panel type for reliable CM5 reset\n");
+
+	/*
 	if (ctx->is_new_panel) {
 		dev_info(dev, "Detected new panel type\n");
 	} else {
 		dev_info(dev, "Detected old panel type\n");
 	}
+	*/
 
 	/*
 	 * Switch the ID GPIO to OUTPUT for use with resetting,
@@ -784,11 +792,8 @@ static int cwu50_probe(struct mipi_dsi_device *dsi)
 		return PTR_ERR(ctx->backlight);
 	}
 
-	ret = of_drm_get_panel_orientation(dev->of_node, &ctx->orientation);
-	if (ret) {
-		dev_err(dev, "%pOF: failed to get orientation %d\n", dev->of_node, ret);
-		return ret;
-	}
+	ctx->orientation = DRM_MODE_PANEL_ORIENTATION_LEFT_UP;
+	dev_info(dev, "Forced Left-Up orientation for CM5\n");
 
 	ctx->panel.prepare_prev_first = true;
 

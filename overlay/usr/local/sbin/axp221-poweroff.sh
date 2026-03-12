@@ -5,7 +5,9 @@
 # Ensure i2c-dev is loaded
 /usr/sbin/modprobe i2c-dev 2>/dev/null
 
-AXP_BUS=13
+# Dynamic bus detection — bus number varies between boots (13 or 15)
+AXP_BUS=$(/usr/sbin/i2cdetect -l 2>/dev/null | grep -m1 'i2c0if\|i2c-gpio\|pmic_i2c\|f00000002.i2c' | cut -f1 | cut -d- -f2)
+[ -z "$AXP_BUS" ] && AXP_BUS=13
 AXP_ADDR=0x34
 OFF_CTRL_REG=0x32
 OFF_BIT=0x80
@@ -22,7 +24,7 @@ echo 0 > /sys/class/backlight/backlight@0/brightness 2>/dev/null
 
 # 2. Release I2C bus by unbinding the kernel driver
 # This prevents "Device or resource busy" errors
-echo "13-0034" > /sys/bus/i2c/drivers/axp20x-i2c/unbind 2>/dev/null
+echo "${AXP_BUS}-0034" > /sys/bus/i2c/drivers/axp20x-i2c/unbind 2>/dev/null
 
 # 3. Disable ALL PMIC Interrupts globally to "calm" the hardware logic
 # This targets Regs 0x40, 0x41, 0x42, 0x43 (IRQ Enable 1-4)

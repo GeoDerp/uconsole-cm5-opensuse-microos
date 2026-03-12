@@ -14,7 +14,11 @@ static int is_axp221(struct device *dev, const void *data)
     if (!client)
         return 0;
     
-    return of_device_is_compatible(client->dev.of_node, "x-powers,axp221");
+    /* Match by I2C address 0x34 */
+    if (client->addr == 0x34)
+        return 1;
+        
+    return 0;
 }
 
 static int __init uconsole_fixup_init(void)

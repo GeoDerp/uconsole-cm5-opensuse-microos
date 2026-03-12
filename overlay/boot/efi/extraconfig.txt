@@ -1,17 +1,28 @@
-# uConsole CM5 Configuration
+# uConsole CM5 Configuration — Stable (March 2026)
+# See docs/STABILITY-REVIEW.md for rationale.
+
+# Disable SPI early to prevent GPIO 1 collision with PMIC I2C
+dtparam=spi=off
 
 # Use the uConsole-specific device tree
 device_tree=merged-clockworkpi.dtb
 
 # Core Overlays
-dtoverlay=rp1-i2c1-fix
 dtoverlay=usb-vbus-hog
 dtoverlay=dwc2,dr_mode=host
 
-# uConsole Specifics
-dtoverlay=clockworkpi-uconsole-cm5
+# uConsole Hardware — uses new stable overlay with full PMIC
+# child device declarations (battery, AC power, ADC in DT)
+dtoverlay=clockworkpi-uconsole-cm5-stable
 dtoverlay=uconsole-audio
-dtoverlay=uconsole-sd-alt
 
-# Enable GPU Acceleration (V3D) with increased CMA for compositors
-dtoverlay=vc4-kms-v3d-pi5,cma-512
+# Force backlight GPIO high at boot (before driver loads)
+gpio=9=op,dh
+gpio=10=ip,np
+
+# Additional cmdline arguments
+cmdline=usbcore.autosuspend=-1 fbcon=rotate:1
+
+# GPU — software rendering recommended; V3D causes timeout -110
+# Uncomment below ONLY if V3D becomes stable in a future kernel:
+# dtoverlay=vc4-kms-v3d-pi5,cma-512

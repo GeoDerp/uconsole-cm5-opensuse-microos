@@ -2,7 +2,9 @@
 # uConsole CM5 Battery Monitor for Waybar
 # Reads raw I2C data from AXP221 PMIC
 
-AXP_BUS=13
+# Dynamic bus detection — bus number varies between boots (13 or 15)
+AXP_BUS=$(/usr/sbin/i2cdetect -l 2>/dev/null | grep -m1 'i2c0if\|i2c-gpio\|pmic_i2c\|f00000002.i2c' | cut -f1 | cut -d- -f2)
+[ -z "$AXP_BUS" ] && AXP_BUS=13
 AXP_ADDR=0x34
 
 # Read Voltage (Reg 0x78, 0x79)

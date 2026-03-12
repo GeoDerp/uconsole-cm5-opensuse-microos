@@ -169,6 +169,7 @@ The uConsole CM5 (Compute Module 5) introduces significant architectural changes
 
 ## Todo
 - [ ] smooth out trackball
+- [ ] hardware acceleration
 
 ## Credits
 - **Rex & The ClockworkPi Community:** For the initial CM5 hardware investigation and device tree overlays.

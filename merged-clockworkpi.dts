@@ -2012,6 +2012,13 @@
 							phandle = <0x30>;
 						};
 
+						panel_id_pins: panel_id_pins {
+							phandle = <0x204>;
+							function = "gpio";
+							pins = "gpio8";
+							bias-pull-down;
+						};
+
 						rp1_i2c0_8_9 {
 							function = "i2c0";
 							pins = "gpio8", "gpio9";
@@ -2509,7 +2516,10 @@
 							vci-supply = <0x10f>;  /* Use same display-vcc regulator for VCI */
 							rotation = <0x5a>;
 							backlight = <0x10e>;
-							reset-gpio = <0x2b 0x08 0x01>;
+							reset-gpio = <0x2b 0x0a 0x01>; /* Dummy (Real ID pin) */
+							id-gpio = <0x2b 0x08 0x00>;    /* Real Reset pin (masquerading as ID) */
+							pinctrl-0 = <0x204>;           /* panel_id_pins (pull-down GPIO 8) */
+							pinctrl-names = "default";
 							reg = <0x00>;
 							compatible = "cw,cwu50";
 

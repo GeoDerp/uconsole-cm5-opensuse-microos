@@ -1,0 +1,143 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "brcm,bcm2712";
+
+	/* Disable HDMI to prevent conflict with RP1 DSI/USB */
+	fragment@0 {
+		target = <&hdmi0>;
+		__overlay__ { status = "disabled"; };
+	};
+	fragment@1 {
+		target = <&hdmi1>;
+		__overlay__ { status = "disabled"; };
+	};
+
+	/* DISABLE SPI10 to free GPIO 1 for PMIC I2C */
+	fragment@2 {
+		target-path = "/soc@107c000000/spi@7d004000";
+		__overlay__ { status = "disabled"; };
+	};
+
+	fragment@3 {
+		target = <&dsi1>;
+		__overlay__ {
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port {
+				dsi1_out: endpoint {
+					remote-endpoint = <&panel_in>;
+				};
+			};
+
+			panel_cwu50: panel@0 {
+				compatible = "cw,cwu50";
+				reg = <0>;
+				reset-gpio = <&rp1_gpio 10 GPIO_ACTIVE_LOW>;
+				id-gpio = <&rp1_gpio 8 GPIO_ACTIVE_HIGH>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&panel_id_pins>;
+				backlight = <&ocp8178_backlight>;
+				rotation = <90>;
+				vci-supply = <&reg_aldo2>;
+				iovcc-supply = <&reg_aldo2>;
+
+				port {
+					panel_in: endpoint {
+						remote-endpoint = <&dsi1_out>;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@4 {
+		target = <&rp1_gpio>;
+		__overlay__ {
+			panel_id_pins: panel_id_pins {
+				function = "gpio";
+				pins = "gpio8";
+				bias-pull-down;
+			};
+
+			usb_vbus_hog: usb_vbus_hog {
+				gpio-hog;
+				gpios = <42 0 43 0>;
+				output-high;
+				line-name = "usb_vbus_en";
+			};
+		};
+	};
+
+	fragment@5 {
+		target-path = "/";
+		__overlay__ {
+			ocp8178_backlight: backlight@0 {
+				compatible = "ocp8178-backlight";
+				backlight-control-gpios = <&rp1_gpio 9 GPIO_ACTIVE_HIGH>;
+				default-brightness = <5>;
+				status = "okay";
+			};
+
+			i2c0if: i2c0if {
+				compatible = "i2c-gpio";
+				gpios = <&rp1_gpio 0 (GPIO_ACTIVE_HIGH | 6)>,
+				        <&rp1_gpio 1 (GPIO_ACTIVE_HIGH | 6)>;
+				i2c-gpio,delay-us = <20>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "okay";
+
+				pmic@34 {
+					compatible = "x-powers,axp221", "simple-mfd";
+					reg = <0x34>;
+					system-power-controller;
+
+					regulators {
+						reg_aldo1: aldo1 {
+							regulator-name = "audio-vdd";
+							regulator-min-microvolt = <3300000>;
+							regulator-max-microvolt = <3300000>;
+							regulator-always-on;
+						};
+						reg_aldo2: aldo2 {
+							regulator-name = "display-vcc";
+							regulator-min-microvolt = <3300000>;
+							regulator-max-microvolt = <3300000>;
+							regulator-always-on;
+						};
+					};
+				};
+			};
+		};
+	};
+
+	/* 4. USB setup - Back to HOST mode as originally working */
+	fragment@6 {
+		target = <&usb>;
+		__overlay__ {
+			status = "okay";
+			dr_mode = "host";
+		};
+	};
+
+	/* Explicitly enable USB controllers */
+	fragment@7 {
+		target-path = "/axi/pcie@1000120000/pci@0,0/dev@0,0/rp1/usb@200000";
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@8 {
+		target-path = "/axi/pcie@1000120000/pci@0,0/dev@0,0/rp1/usb@300000";
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};

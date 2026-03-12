@@ -12,7 +12,8 @@
 #include <linux/gpio/consumer.h>
 #include <linux/regulator/consumer.h>
 #include <linux/delay.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
+#include <linux/mod_devicetable.h>
 #include <linux/module.h>
 #include <video/mipi_display.h>
 

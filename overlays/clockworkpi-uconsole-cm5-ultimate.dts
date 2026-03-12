@@ -1,0 +1,131 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "brcm,bcm2712";
+
+	/* 1. Disable HDMI nodes by absolute paths to resolve any hidden resource conflicts */
+	fragment@0 {
+		target-path = "/soc@107c000000/hdmi@7ef00700";
+		__overlay__ { status = "disabled"; };
+	};
+	fragment@1 {
+		target-path = "/soc@107c000000/hdmi@7ef05700";
+		__overlay__ { status = "disabled"; };
+	};
+	fragment@2 {
+		target-path = "/soc@107c000000/vc4@7ef00000";
+		__overlay__ { status = "disabled"; };
+	};
+	fragment@3 {
+		target = <&spi10>;
+		__overlay__ { status = "disabled"; };
+	};
+
+	/* 2. DSI Display and Panel */
+	fragment@4 {
+		target = <&dsi1>;
+		__overlay__ {
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			
+			/* Bandwidth Fix: Force DSI clock to 100MHz/25MHz */
+			assigned-clocks = <&rp1_clocks 22>, <&rp1_clocks 41>;
+			assigned-clock-rates = <100000000>, <25000000>;
+
+			port {
+				dsi1_out: endpoint {
+					remote-endpoint = <&panel_in>;
+				};
+			};
+
+			panel_cwu50: panel@0 {
+				compatible = "cw,cwu50";
+				reg = <0>;
+				reset-gpio = <&rp1_gpio 10 GPIO_ACTIVE_LOW>;
+				id-gpio = <&rp1_gpio 8 GPIO_ACTIVE_HIGH>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&panel_id_pins>;
+				backlight = <&ocp8178_backlight>;
+				/* orientation <3> is 90 degrees Right-Up */
+				orientation = <3>;
+				vci-supply = <&reg_aldo2>;
+				iovcc-supply = <&reg_aldo2>;
+
+				port {
+					panel_in: endpoint {
+						remote-endpoint = <&dsi1_out>;
+					};
+				};
+			};
+		};
+	};
+
+	/* 3. GPIO and Pinctrl */
+	fragment@5 {
+		target = <&rp1_gpio>;
+		__overlay__ {
+			panel_id_pins: panel_id_pins {
+				function = "gpio";
+				pins = "gpio8";
+				bias-pull-down;
+			};
+		};
+	};
+
+	/* 4. PMIC and Backlight */
+	fragment@6 {
+		target-path = "/";
+		__overlay__ {
+			ocp8178_backlight: backlight@0 {
+				compatible = "ocp8178-backlight";
+				backlight-control-gpios = <&rp1_gpio 9 GPIO_ACTIVE_HIGH>;
+				default-brightness = <5>;
+				status = "okay";
+			};
+
+			i2c0if: i2c0if {
+				compatible = "i2c-gpio";
+				gpios = <&rp1_gpio 0 (GPIO_ACTIVE_HIGH | 6)>,
+				        <&rp1_gpio 1 (GPIO_ACTIVE_HIGH | 6)>;
+				i2c-gpio,delay-us = <20>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "okay";
+
+				pmic@34 {
+					compatible = "x-powers,axp221", "simple-mfd";
+					reg = <0x34>;
+					system-power-controller;
+
+					regulators {
+						reg_aldo1: aldo1 {
+							regulator-name = "audio-vdd";
+							regulator-min-microvolt = <3300000>;
+							regulator-max-microvolt = <3300000>;
+							regulator-always-on;
+						};
+						reg_aldo2: aldo2 {
+							regulator-name = "display-vcc";
+							regulator-min-microvolt = <3300000>;
+							regulator-max-microvolt = <3300000>;
+							regulator-always-on;
+						};
+					};
+				};
+			};
+		};
+	};
+
+	/* 5. USB DWC2 Host Mode */
+	fragment@7 {
+		target = <&usb>;
+		__overlay__ {
+			status = "okay";
+			dr_mode = "host";
+		};
+	};
+};

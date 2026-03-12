@@ -1,102 +1,61 @@
 #!/bin/bash
-# uConsole display and backlight initialization
-# This script is run at boot by uconsole-backlight.service
+# uConsole hardware initialization
 set -x
-
-# Ensure i2c-dev is loaded
 /usr/sbin/modprobe i2c-dev 2>/dev/null
 
-# Fix SELinux context for custom modules (MicroOS has SELinux)
-for ko in /var/lib/modules-overlay/*.ko; do
-    [ -f "$ko" ] && chcon -t modules_object_t "$ko" 2>/dev/null
-done
+# 1. Find PMIC bus — dynamic detection, NOT hardcoded
+AXP_BUS=$(/usr/sbin/i2cdetect -l | grep -m1 'i2c0if\|i2c-gpio\|pmic_i2c\|f00000002.i2c' | cut -f1 | cut -d- -f2)
+[ -z "$AXP_BUS" ] && AXP_BUS=15
+AXP_ADDR=0x34
 
-# Function to robustly load modules (fallback to insmod from overlay)
+# 2. Maximize Power for Peripherals
+# Enable all LDOs
+/usr/sbin/i2cset -y -f $AXP_BUS $AXP_ADDR 0x12 0xff
+# Set V_OFF to 3.0V (Level 4)
+/usr/sbin/i2cset -y -f $AXP_BUS $AXP_ADDR 0x31 0x04
+# Maximize VBUS current limit (No limit)
+/usr/sbin/i2cset -y -f $AXP_BUS $AXP_ADDR 0x30 0x63
+
+# 3. Handle USB Hub Power (GPIO 42/43 on RP1)
+RP1_GPIO_CHIP=$(grep -l pinctrl-rp1 /sys/class/gpio/gpiochip*/label | head -n 1 | sed 's|.*/gpiochip||' | sed 's|/label||')
+if [ -n "$RP1_GPIO_CHIP" ]; then
+    for g in 42 43; do
+        GPIO_NUM=$((RP1_GPIO_CHIP + g))
+        echo $GPIO_NUM > /sys/class/gpio/export 2>/dev/null
+        echo out > /sys/class/gpio/gpio$GPIO_NUM/direction 2>/dev/null
+        echo 1 > /sys/class/gpio/gpio$GPIO_NUM/value 2>/dev/null
+    done
+fi
+
+# 4. Driver Initialization
+for ko in /var/lib/modules-overlay/*.ko; do [ -f "$ko" ] && chcon -t modules_object_t "$ko" 2>/dev/null; done
+
 load_module() {
     local mod_name="$1"
-    # Normalize name (replace - with _)
-    local mod_file_name="${mod_name//-/_}.ko"
-    
-    echo "Attempting to load $mod_name..."
-    
-    if /usr/sbin/modprobe "$mod_name" 2>/dev/null; then
-        echo "  Loaded via modprobe."
-        return 0
-    fi
-    
-    echo "  modprobe failed. Trying insmod from overlay..."
-    local overlay_path="/var/lib/modules-overlay/$mod_file_name"
-    
-    if [ -f "$overlay_path" ]; then
-        if /usr/sbin/insmod "$overlay_path" 2>/dev/null; then
-            echo "  Loaded via insmod ($overlay_path)."
-            return 0
-        else
-            echo "  Failed to insmod $overlay_path."
-        fi
-    else
-        echo "  Overlay file not found: $overlay_path"
-    fi
+    local mod_file_name="${mod_name//_/-}.ko"
+    local alt_mod_file_name="${mod_name//-/_}.ko"
+    if /usr/sbin/modprobe "$mod_name" 2>/dev/null; then return 0; fi
+    for f in "$mod_file_name" "$alt_mod_file_name"; do
+        local p="/var/lib/modules-overlay/$f"
+        if [ -f "$p" ]; then if /usr/sbin/insmod "$p" 2>/dev/null; then return 0; fi; fi
+    done
     return 1
 }
 
-# Power Cycle Display (ALDO2) - Force regulator toggle via I2C to reset panel
-# This is required because the panel controller needs a hard voltage reset
-# and regulator_enable() is a no-op if already on.
-VAL=$(/usr/sbin/i2cget -y -f 13 0x34 0x10 2>/dev/null)
-if [ -n "$VAL" ]; then
-    # Clear bit 2 (0xFB mask)
-    OFF_VAL=$(printf "0x%X" $(( $VAL & 0xFB )))
-    # Set bit 2 (0x04 mask)
-    ON_VAL=$(printf "0x%X" $(( $VAL | 0x04 )))
-
-    echo "Power cycling display (ALDO2)..."
-    /usr/sbin/i2cset -y -f 13 0x34 0x10 $OFF_VAL
-    sleep 1
-    /usr/sbin/i2cset -y -f 13 0x34 0x10 $ON_VAL
-    sleep 0.5
-else
-    echo "WARNING: Failed to read PMIC via I2C. Skipping power cycle."
-fi
-
-# Explicitly load display and backlight drivers
-echo "Loading display drivers (First to ensure regulators work)..."
+load_module drm_dma_helper
 load_module panel_cwu50
 load_module drm_rp1_dsi
-
-# Load backlight driver (OCP8178) with reload workaround
-if load_module ocp8178_bl; then
-    echo "Reloading ocp8178_bl to fix desync..."
-    /usr/sbin/rmmod ocp8178_bl 2>/dev/null
-    load_module ocp8178_bl
-fi
-
-# Allow display init to settle before stressing I2C with battery polling
-sleep 2
-
-echo "Loading AXP and Fixup drivers..."
+if load_module ocp8178_bl; then /usr/sbin/rmmod ocp8178_bl 2>/dev/null; load_module ocp8178_bl; fi
 /usr/sbin/modprobe industrialio 2>/dev/null
 /usr/sbin/modprobe axp20x_adc 2>/dev/null
 
-# Load fixup module to instantiate AXP221 children (ADC, Battery)
 load_module uconsole_fixup
 
-# Load Battery Drivers
+# With clockworkpi-uconsole-cm5-stable overlay, kernel instantiates them natively.
+# Keep as fallback for older overlays.
 /usr/sbin/modprobe axp20x_ac_power 2>/dev/null
 /usr/sbin/modprobe axp20x_battery 2>/dev/null
-
-# Load Audio Drivers
-/usr/sbin/modprobe snd_soc_simple_card 2>/dev/null
 load_module snd_soc_rp1_aout
 
-# Set brightness - assuming backlight driver will load and create device
-if [ -e /sys/class/backlight/backlight@0/brightness ]; then
-    echo 8 > /sys/class/backlight/backlight@0/brightness 2>/dev/null
-fi
-
-# Bind framebuffer console
-if [ -e /sys/class/vtconsole/vtcon1/bind ]; then
-    echo 1 > /sys/class/vtconsole/vtcon1/bind 2>/dev/null
-fi
-
+if [ -e /sys/class/backlight/backlight@0/brightness ]; then echo 8 > /sys/class/backlight/backlight@0/brightness; fi
 exit 0
