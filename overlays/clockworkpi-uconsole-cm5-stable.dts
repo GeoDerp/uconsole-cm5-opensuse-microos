@@ -134,7 +134,7 @@
 				charge-full-design-microamp-hours = <6700000>;
 			};
 
-			pmic_i2c: pmic_i2c {
+			i2c0if: i2c0if {
 				compatible = "i2c-gpio";
 				gpios = <&rp1_gpio 0 (GPIO_ACTIVE_HIGH | 6)>,
 				        <&rp1_gpio 1 (GPIO_ACTIVE_HIGH | 6)>;

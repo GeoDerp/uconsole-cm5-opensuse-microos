@@ -41,15 +41,16 @@ ssh -i "$SSH_KEY" "$TARGET" bash << 'EOF'
     fi
 
     # Rebuild and install modules
+    KVER=$(uname -r)
     sudo mkdir -p /var/lib/modules-overlay/
-    for d in panel-cwu50 ocp8178_bl drm-rp1-dsi uconsole-fixup rp1_aout; do
+    for d in panel-cwu50 ocp8178_bl drm-rp1-dsi uconsole-fixup snd_soc_rp1_aout; do
         if [ -d "/tmp/uconsole-drivers/$d" ]; then
             cd "/tmp/uconsole-drivers/$d"
-            make clean
+            make clean KERNELRELEASE=$KVER
             if [ -f "$VMLINUX_PATH" ]; then
-                make -C /lib/modules/$(uname -r)/build M=$PWD VMLINUX=$VMLINUX_PATH modules KBUILD_MODPOST_WARN=
+                make -C /lib/modules/$KVER/build M=$PWD VMLINUX=$VMLINUX_PATH modules KBUILD_MODPOST_WARN=
             else
-                make -C /lib/modules/$(uname -r)/build M=$PWD modules
+                make -C /lib/modules/$KVER/build M=$PWD modules
             fi
             
             # Use original name with hyphen or underscore dynamically
