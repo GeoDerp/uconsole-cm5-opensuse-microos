@@ -53,6 +53,10 @@ ssh -i "$SSH_KEY" "$TARGET" bash << 'EOF'
     sudo chmod +x /usr/local/sbin/uconsole-dsi-rebind.sh
     sudo restorecon -v /usr/local/bin/*.sh /usr/local/sbin/*.sh 2>/dev/null || true
     
+    # Map Hibernate to Poweroff to prevent lockups if triggered by UI
+    sudo ln -sf /usr/lib/systemd/system/poweroff.target /etc/systemd/system/hibernate.target
+    sudo systemctl daemon-reload
+    
     # Update boot config
     sudo cp /tmp/extraconfig.txt /boot/efi/extraconfig.txt
     
