@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-TARGET="${1:-geo@192.168.1.37}"
-SSH_KEY="${2:-$HOME/.ssh/pi_temp}"
+TARGET="${1:-user@192.168.1.100}"
+SSH_KEY="${2:-$HOME/.ssh/id_rsa}"
 
 log() { echo -e "\033[0;32m[DEPLOY]\033[0m $1"; }
 

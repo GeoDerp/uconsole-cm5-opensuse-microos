@@ -48,14 +48,14 @@ Run the master stabilization script. This script will:
 *   Install the power management scripts and configure GRUB.
 
 ```bash
-# Replace geo@192.168.1.37 with your user and device IP
-./scripts/deploy_stabilized_config.sh geo@192.168.1.37
+# Replace user@192.168.1.100 with your user and device IP
+./scripts/deploy_stabilized_config.sh user@192.168.1.100
 ```
 
 ### 4. Reboot and Finalize
 The script will instruct you to reboot. Because MicroOS uses transactional updates, you must restart for the changes to take effect.
 ```bash
-ssh geo@192.168.1.37 "sudo reboot"
+ssh user@192.168.1.100 "sudo reboot"
 ```
 *Note: If the system hangs during shutdown (green LED stays on), the PMIC is locked. Perform a 60-second battery pull (see Troubleshooting below).*
 

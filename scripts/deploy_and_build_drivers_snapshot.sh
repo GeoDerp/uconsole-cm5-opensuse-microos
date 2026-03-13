@@ -11,7 +11,7 @@ modules against the target's kernel headers and installs them into
 `/lib/modules/$(uname -r)/extra` inside the new snapshot, and runs `depmod -a`.
 
 Example:
-  ./scripts/deploy_and_build_drivers_snapshot.sh 192.168.1.37 geo ~/.ssh/pi_temp --install-deps
+  ./scripts/deploy_and_build_drivers_snapshot.sh 192.168.1.100 myuser ~/.ssh/id_rsa --install-deps
 
 EOF
 }

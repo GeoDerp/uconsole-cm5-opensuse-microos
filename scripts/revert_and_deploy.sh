@@ -11,7 +11,7 @@ Interactive helper that:
   3) Deploys device tree/overlays/config and (optionally) drivers
 
 Example:
-  ./scripts/revert_and_deploy.sh 192.168.1.37 geo ~/.ssh/pi_temp --snapshot 5
+  ./scripts/revert_and_deploy.sh 192.168.1.100 myuser ~/.ssh/id_rsa --snapshot 5
 
 EOF
 }
