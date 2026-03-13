@@ -15,7 +15,8 @@ This document serves as the definitive reference for the hardware stabilization 
 ## 3. DSI Underflows (Screen Flickering/Tearing)
 **Symptom**: The display flashes or tears, and `dmesg` shows `*ERROR* Underflow! (panics=...)`.
 **Root Cause**: The `video=DSI-1:720x1280@60` parameter in the GRUB boot arguments was acting as a VESA override. It forced the DRM subsystem to push the pixel clock to 77MHz, overriding the safe timings built into the `panel-cwu50` driver. This starved the RP1 DSI controller of memory bandwidth.
-**The Fix**: Removed the `video=` override from GRUB. The driver now defaults to a safe 40MHz clock with generous blanking, permanently eliminating underflows. The 90-degree landscape rotation (`LEFT_UP`) was hardcoded directly into the driver source to compensate for removing the GRUB rotation argument.
+**The Fix**: Removed the `video=` override from GRUB. The driver now defaults to a safe 40MHz clock with generous blanking, permanently eliminating underflows. The 90-degree landscape rotation (`LEFT_UP`) was hardcoded directly into the driver source. 
+*Note: You will see `vc4-drm axi:gpu: [drm] No compatible format found` in `dmesg`. This is **expected and harmless**. It simply means the complex Pi 5 VC4 engine yielded control, allowing `drm-rp1-dsi` to run as a highly stable, standalone DRM device.*
 
 ## 4. Battery Monitoring (The `uconsole_fixup` Hack)
 **Symptom**: `/sys/class/power_supply` is empty, meaning the OS has no idea what the battery percentage is.
