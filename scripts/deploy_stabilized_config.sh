@@ -95,7 +95,7 @@ ssh -i "$SSH_KEY" "$TARGET" bash << 'EOF'
     sudo sed -i '/clockworkpi-uconsole-cm5-fix/d' /boot/efi/config.txt
     
     # Fix GRUB
-    sudo sed -i 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="deferred_probe_timeout=5 usbcore.autosuspend=-1 video=simplefb:off fbcon=rotate:1"/' /etc/default/grub
+    sudo sed -i 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="deferred_probe_timeout=5 usbcore.autosuspend=-1 fbcon=rotate:1"/' /etc/default/grub
     sudo transactional-update run grub2-mkconfig -o /boot/grub2/grub.cfg
 EOF
 
