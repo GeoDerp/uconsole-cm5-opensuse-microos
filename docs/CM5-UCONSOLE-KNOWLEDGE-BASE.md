@@ -12,11 +12,15 @@ This document serves as the definitive reference for the hardware stabilization 
 **Root Cause**: openSUSE MicroOS uses transactional updates. When the kernel is updated, the internal "Symbol Versions" (CRCs) change. Custom out-of-tree modules built against the old kernel headers will be rejected by the new kernel.
 **The Fix**: The deployment pipeline (`scripts/deploy_stabilized_config.sh`) was rewritten to automatically handle this. It syncs the C source files to the device, dynamically extracts the active `vmlinux` header file, and natively recompiles every custom driver against the running kernel.
 
-## 3. DSI Underflows (Screen Flickering/Tearing)
-**Symptom**: The display flashes or tears, and `dmesg` shows `*ERROR* Underflow! (panics=...)`.
-**Root Cause**: The `video=DSI-1:720x1280@60` parameter in the GRUB boot arguments was acting as a VESA override. It forced the DRM subsystem to push the pixel clock to 77MHz, overriding the safe timings built into the `panel-cwu50` driver. This starved the RP1 DSI controller of memory bandwidth.
-**The Fix**: Removed the `video=` override from GRUB. The driver now defaults to a safe 40MHz clock with generous blanking, permanently eliminating underflows. The 90-degree landscape rotation (`LEFT_UP`) was hardcoded directly into the driver source. 
-*Note: You will see `vc4-drm axi:gpu: [drm] No compatible format found` in `dmesg`. This is **expected and harmless**. It simply means the complex Pi 5 VC4 engine yielded control, allowing `drm-rp1-dsi` to run as a highly stable, standalone DRM device.*
+## 3. DSI Underflows and Display Pipeline
+**Symptom**: The display flashes or tears, and `dmesg` shows `*ERROR* Underflow! (panics=...)`, or the screen remains completely black.
+**Root Cause 1 (Underflows)**: The `video=DSI-1:720x1280@60` parameter in the GRUB boot arguments was acting as a VESA override. It forced the DRM subsystem to push the pixel clock to 77MHz, overriding the safe timings built into the `panel-cwu50` driver. This starved the RP1 DSI controller of memory bandwidth.
+**Root Cause 2 (Black Screen)**: Disabling the `vc4` graphics core (e.g., via `disable-vc4` overlay) breaks the Pi 5's Hardware Video Scaler pipeline, leaving the `drm-rp1-dsi` driver without a valid pixel source. 
+**The Fix**: 
+*   **Base DTB**: We use `device_tree=merged-clockworkpi.dtb` as the monolithic foundation. It correctly maps the `vc4` pipeline to the DSI controller without claiming the GPIOs needed for the PMIC.
+*   **GRUB**: Removed the `video=DSI-1...` and `video=simplefb:off` overrides from GRUB. The driver now defaults to a safe 40MHz clock with generous blanking, permanently eliminating underflows, and the early boot TTY console displays correctly.
+*   **Driver**: The 90-degree landscape rotation (`LEFT_UP`) is hardcoded directly into the `panel-cwu50` C source. 
+*Note: You will see `vc4-drm axi:gpu: [drm] No compatible format found` in `dmesg`. This is **expected and harmless** in this specific configuration. It indicates the complex Pi 5 VC4 engine yielded some format control, allowing `drm-rp1-dsi` to drive the display autonomously.*
 
 ## 4. Battery Monitoring (The `uconsole_fixup` Hack)
 **Symptom**: `/sys/class/power_supply` is empty, meaning the OS has no idea what the battery percentage is.
