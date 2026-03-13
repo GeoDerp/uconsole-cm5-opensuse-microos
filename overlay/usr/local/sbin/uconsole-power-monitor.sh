@@ -10,9 +10,11 @@
 CRIT_PERCENT=8
 CRIT_VOLT_UV=3550000  # 3.55V
 WARN_PERCENT=15
+IDLE_TIMEOUT=1800     # 30 minutes in seconds
 
 BAT_PATH="/sys/class/power_supply/axp20x-battery"
 FAIL_COUNT=0
+IDLE_COUNT=0
 
 # Dynamic I2C bus detection for fallback path
 /usr/sbin/modprobe i2c-dev 2>/dev/null
@@ -121,6 +123,22 @@ while true; do
         logger -s -p crit -t power-monitor "CRITICAL: Battery sensor lost consistently (Potential hardware deadlock). Forcing shutdown."
         sync
         systemctl poweroff
+        exit 0
+    fi
+
+    # 4. Inactivity Shutdown
+    # Check if screen is blanked via DRM DPMS
+    DPMS_STATE=$(cat /sys/class/drm/card0-DSI-1/dpms 2>/dev/null)
+    if [ "$DPMS_STATE" = "Off" ]; then
+        IDLE_COUNT=$((IDLE_COUNT + 30))
+    else
+        IDLE_COUNT=0
+    fi
+
+    if [ "$IDLE_COUNT" -ge "$IDLE_TIMEOUT" ]; then
+        logger -s -p crit -t power-monitor "30 minutes of inactivity detected (screen off). Shutting down as alternative to sleep."
+        sync
+        /usr/local/sbin/axp221-poweroff.sh
         exit 0
     fi
     

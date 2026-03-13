@@ -24,11 +24,7 @@ for b in /sys/class/backlight/*/brightness; do
     [ -f "$b" ] && echo 0 > "$b" 2>/dev/null
 done
 
-# 2. Release I2C bus by unbinding the kernel driver
-# This prevents "Device or resource busy" errors
-echo "${AXP_BUS}-0034" > /sys/bus/i2c/drivers/axp20x-i2c/unbind 2>/dev/null
-
-# 3. Disable ALL PMIC Interrupts globally to "calm" the hardware logic
+# 2. Disable ALL PMIC Interrupts globally to "calm" the hardware logic
 # This targets Regs 0x40, 0x41, 0x42, 0x43 (IRQ Enable 1-4)
 for reg in 0x40 0x41 0x42 0x43; do
     /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${reg} 0x00 2>/dev/null

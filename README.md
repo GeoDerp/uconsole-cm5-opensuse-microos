@@ -18,7 +18,7 @@ This repository provides the definitive drivers, device tree overlays, and autom
 | **Shutdown** | ✅ Aggressive | Forced PMIC shutdown via direct I2C writes (`axp221-poweroff.sh`) unbinds drivers first to bypass persistent I2C bus locks. |
 | **Battery Safety**| ✅ Active | Background monitor (`uconsole-power-monitor`) broadcasts warnings to TTY/Wayland at **15%**, and forces a hardware shutdown at **8%** to prevent the PMIC from entering a brownout/zombie state. |
 | **MicroSD Slot** | ❌ Not Working | External SD card slot on the mainboard is currently undetected by the RP1 architecture. |
-| **Sleep / Hibernate** | ❌ Not Supported | **Sleep:** Fails due to missing RTC driver. **Hibernate:** Fails due to no Swap space configured on MicroOS. |
+| **Sleep / Hibernate** | ❌ Not Supported | **Sleep:** Fails due to missing deep sleep ACPI support on XHCI. **Hibernate:** Fails due to no Swap space. <br>✅ *Alternative*: System automatically powers off after **30 minutes** of screen inactivity to preserve battery. |
 
 ---
 
