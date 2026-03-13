@@ -35,7 +35,7 @@ scp -i "$SSH_KEY" -r extracted-drivers/* "$TARGET:/usr/local/src/uconsole-driver
 log "Applying hardware configuration on remote..."
 ssh -i "$SSH_KEY" "$TARGET" bash << 'EOF'
     set -e
-
+    
     # Install Overlay
     sudo cp /tmp/clockworkpi-uconsole-cm5-stable.dtbo /boot/efi/overlays/
     

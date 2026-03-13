@@ -1,28 +1,24 @@
-# uConsole CM5 Configuration — Stable (March 2026)
-# See docs/STABILITY-REVIEW.md for rationale.
+# uConsole CM5 Stabilization - Master Config (March 2026)
 
-# Disable SPI early to prevent GPIO 1 collision with PMIC I2C
+# 1. Disable conflicting standard controllers early
+# Disable SPI to prevent GPIO 1 collision with PMIC I2C
 dtparam=spi=off
+# Disable VC4 complex graphics to let drm-rp1-dsi run standalone
+dtoverlay=disable-vc4
 
-# Use the uConsole-specific device tree
-device_tree=merged-clockworkpi.dtb
-
-# Core Overlays
-dtoverlay=usb-vbus-hog
-dtoverlay=dwc2,dr_mode=host
-
-# uConsole Hardware — uses new stable overlay with full PMIC
-# child device declarations (battery, AC power, ADC in DT)
+# 2. Base Overlays (Required for CM5 hardware support)
 dtoverlay=clockworkpi-uconsole-cm5-stable
 dtoverlay=uconsole-audio
+dtoverlay=uconsole-sd-alt
 
-# Force backlight GPIO high at boot (before driver loads)
-gpio=9=op,dh
-gpio=10=ip,np
+# 3. USB Configuration
+dtoverlay=dwc2,dr_mode=host
 
-# Additional cmdline arguments
+# 4. Display Timings & TTY Fix
+# Removal of video= override from GRUB allows panel driver safe 40MHz clock.
+# usbcore.autosuspend=-1 prevents keyboard sleep issues.
 cmdline=usbcore.autosuspend=-1 fbcon=rotate:1
 
-# GPU — software rendering recommended; V3D causes timeout -110
-# Uncomment below ONLY if V3D becomes stable in a future kernel:
-# dtoverlay=vc4-kms-v3d-pi5,cma-512
+# 5. Boot Pins (Force backlight high at boot)
+gpio=9=op,dh
+gpio=10=ip,np
