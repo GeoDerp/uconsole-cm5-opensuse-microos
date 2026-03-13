@@ -20,7 +20,9 @@ sync
 logger -t axp221-poweroff "Triggering aggressive AXP221 hardware power-off"
 
 # 1. Kill Backlight immediately to give visual feedback
-echo 0 > /sys/class/backlight/backlight@0/brightness 2>/dev/null
+for b in /sys/class/backlight/*/brightness; do
+    [ -f "$b" ] && echo 0 > "$b" 2>/dev/null
+done
 
 # 2. Release I2C bus by unbinding the kernel driver
 # This prevents "Device or resource busy" errors

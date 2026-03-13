@@ -57,5 +57,7 @@ load_module uconsole_fixup
 /usr/sbin/modprobe axp20x_battery 2>/dev/null
 load_module snd_soc_rp1_aout
 
-if [ -e /sys/class/backlight/backlight@0/brightness ]; then echo 8 > /sys/class/backlight/backlight@0/brightness; fi
+for b in /sys/class/backlight/*/brightness; do
+    [ -f "$b" ] && echo 8 > "$b" 2>/dev/null
+done
 exit 0
