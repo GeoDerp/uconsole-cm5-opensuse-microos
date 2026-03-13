@@ -27,7 +27,43 @@ if [ -n "$RP1_GPIO_CHIP" ]; then
     done
 fi
 
-# 4. Driver Initialization
+# 4. Dynamic Driver Rebuild (MicroOS Auto-Healing)
+KVER=$(uname -r)
+MARKER_FILE="/var/lib/modules-overlay/.built_for_${KVER}"
+
+if [ ! -f "$MARKER_FILE" ]; then
+    echo "New kernel detected: $KVER. Rebuilding uConsole drivers..."
+    VMLINUX_PATH="/tmp/vmlinux"
+    if [ -f "/usr/lib/modules/${KVER}/vmlinux.xz" ]; then
+        xz -dc "/usr/lib/modules/${KVER}/vmlinux.xz" > "$VMLINUX_PATH" 2>/dev/null
+    fi
+
+    mkdir -p /var/lib/modules-overlay/
+    for d in panel-cwu50 ocp8178_bl drm-rp1-dsi uconsole-fixup snd_soc_rp1_aout; do
+        SRC_DIR="/usr/local/src/uconsole-drivers/$d"
+        if [ -d "$SRC_DIR" ]; then
+            cd "$SRC_DIR" || continue
+            make clean KERNELRELEASE="$KVER" >/dev/null 2>&1
+            if [ -f "$VMLINUX_PATH" ]; then
+                make -C "/lib/modules/${KVER}/build" M="$PWD" VMLINUX="$VMLINUX_PATH" modules KBUILD_MODPOST_WARN= >/dev/null 2>&1
+            else
+                make -C "/lib/modules/${KVER}/build" M="$PWD" modules >/dev/null 2>&1
+            fi
+            
+            MOD_FILE=$(ls *.ko 2>/dev/null | head -n 1)
+            if [ -n "$MOD_FILE" ]; then
+                cp "$MOD_FILE" /var/lib/modules-overlay/
+            fi
+        fi
+    done
+    rm -f "$VMLINUX_PATH"
+    # Remove old built modules marker
+    rm -f /var/lib/modules-overlay/.built_for_*
+    touch "$MARKER_FILE"
+    echo "Rebuild complete."
+fi
+
+# 5. Driver Initialization
 for ko in /var/lib/modules-overlay/*.ko; do [ -f "$ko" ] && chcon -t modules_object_t "$ko" 2>/dev/null; done
 
 load_module() {

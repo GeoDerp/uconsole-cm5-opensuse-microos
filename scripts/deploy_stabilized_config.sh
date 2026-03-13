@@ -25,44 +25,16 @@ scp -i "$SSH_KEY" overlay/usr/local/sbin/uconsole-dsi-rebind.sh "$TARGET:/tmp/"
 scp -i "$SSH_KEY" overlay/usr/local/bin/uconsole-battery.sh "$TARGET:/tmp/"
 scp -i "$SSH_KEY" overlay/boot/efi/extraconfig.txt "$TARGET:/tmp/extraconfig.txt"
 
-# 3. Sync Driver Sources for Recompilation
-log "Syncing driver sources..."
-ssh -i "$SSH_KEY" "$TARGET" "mkdir -p /tmp/uconsole-drivers"
-scp -i "$SSH_KEY" -r extracted-drivers/* "$TARGET:/tmp/uconsole-drivers/"
+# 3. Sync Driver Sources for Dynamic Recompilation
+# Sources are stored persistently so the init script can recompile them if the kernel updates
+log "Syncing driver sources to persistent storage..."
+ssh -i "$SSH_KEY" "$TARGET" "sudo mkdir -p /usr/local/src/uconsole-drivers && sudo chown \$USER:\$USER /usr/local/src/uconsole-drivers"
+scp -i "$SSH_KEY" -r extracted-drivers/* "$TARGET:/usr/local/src/uconsole-drivers/"
 
-# 4. Apply System Configuration and Rebuild Drivers
-log "Applying hardware configuration and rebuilding drivers on remote..."
+# 4. Apply System Configuration
+log "Applying hardware configuration on remote..."
 ssh -i "$SSH_KEY" "$TARGET" bash << 'EOF'
     set -e
-    # Extract vmlinux for proper BTF/MODPOST symbol generation if available
-    VMLINUX_PATH="/tmp/vmlinux"
-    if [ -f /usr/lib/modules/$(uname -r)/vmlinux.xz ]; then
-        sudo xz -dc /usr/lib/modules/$(uname -r)/vmlinux.xz | sudo tee $VMLINUX_PATH >/dev/null
-    fi
-
-    # Rebuild and install modules
-    KVER=$(uname -r)
-    sudo mkdir -p /var/lib/modules-overlay/
-    for d in panel-cwu50 ocp8178_bl drm-rp1-dsi uconsole-fixup snd_soc_rp1_aout; do
-        if [ -d "/tmp/uconsole-drivers/$d" ]; then
-            cd "/tmp/uconsole-drivers/$d"
-            make clean KERNELRELEASE=$KVER
-            if [ -f "$VMLINUX_PATH" ]; then
-                make -C /lib/modules/$KVER/build M=$PWD VMLINUX=$VMLINUX_PATH modules KBUILD_MODPOST_WARN=
-            else
-                make -C /lib/modules/$KVER/build M=$PWD modules
-            fi
-            
-            # Use original name with hyphen or underscore dynamically
-            MOD_FILE=$(ls *.ko | head -n 1)
-            if [ -n "$MOD_FILE" ]; then
-                sudo cp "$MOD_FILE" /var/lib/modules-overlay/
-            fi
-        fi
-    done
-
-    # Clean up vmlinux
-    sudo rm -f $VMLINUX_PATH
 
     # Install Overlay
     sudo cp /tmp/clockworkpi-uconsole-cm5-stable.dtbo /boot/efi/overlays/
