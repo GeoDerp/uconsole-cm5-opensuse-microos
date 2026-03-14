@@ -71,8 +71,8 @@ ssh -i "$SSH_KEY" "$TARGET" bash << 'EOF'
     sudo sed -i '/clockworkpi-uconsole-cm5-fix/d' /boot/efi/config.txt
     
     # Fix GRUB for Display, TTY, and Boot Visibility
-    # 1. Hardware args: timeout for probes, disable USB sleep, set DSI video mode and rotate fbcon
-    sudo sed -i 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="deferred_probe_timeout=5 usbcore.autosuspend=-1 video=DSI-1:720x1280@30,rotate=90 fbcon=rotate:1"/' /etc/default/grub
+    # 1. Hardware args: timeout for probes, disable USB sleep, and rotate fbcon
+    sudo sed -i 's/GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="deferred_probe_timeout=5 usbcore.autosuspend=-1 fbcon=rotate:1"/' /etc/default/grub
     
     # 2. Make OS boot verbose (remove 'quiet' and 'splash')
     sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="systemd.show_status=yes console=tty0"/' /etc/default/grub
