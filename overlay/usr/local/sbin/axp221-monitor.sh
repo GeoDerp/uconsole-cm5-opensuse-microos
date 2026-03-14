@@ -9,8 +9,9 @@ AXP_BUS=$(/usr/sbin/i2cdetect -l 2>/dev/null | grep -m1 'i2c0if\|i2c-gpio\|f0000
 [ -z "$AXP_BUS" ] && AXP_BUS=13
 AXP_ADDR=0x34
 IRQ_STAT1_REG=0x44
-# Bit 4 = PEK Short Press
-MASK=0x10
+# Bit 4 = PEK Short Press, Bit 5 = PEK Long Press
+SHORT_MASK=0x10
+LONG_MASK=0x20
 
 logger -t axp221-monitor "Starting power button monitor..."
 
@@ -29,8 +30,8 @@ for i in {1..5}; do
     /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 0xFF
     val=$(/usr/sbin/i2cget -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 2>/dev/null)
     
-    # Check if read succeeded and bit is clear
-    if [ -n "$val" ] && [ $(($val & $MASK)) -eq 0 ]; then
+    # Check if read succeeded and bits are clear
+    if [ -n "$val" ] && [ $(($val & ($SHORT_MASK | $LONG_MASK))) -eq 0 ]; then
         logger -t axp221-monitor "IRQ cleared successfully (Reg 0x44: $val)"
         CLEARED=1
         break
@@ -45,7 +46,6 @@ if [ "$CLEARED" -eq 0 ]; then
 fi
 
 # Post-Boot Safety Delay: Wait 30 seconds before acting on any new press
-# This ensures that if the script restarts or loops, the user has time to intervene via SSH/Console
 sleep 30
 
 while true; do
@@ -53,22 +53,27 @@ while true; do
     val=$(/usr/sbin/i2cget -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 2>/dev/null)
     
     if [ -n "$val" ]; then
-        # Check if Bit 4 is set
-        if [ $(($val & $MASK)) -ne 0 ]; then
+        # Check for Long Press (Bit 5) first -> Graceful Shutdown
+        if [ $(($val & $LONG_MASK)) -ne 0 ]; then
+            /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} $LONG_MASK
+            logger -t axp221-monitor "Long press detected! Triggering graceful shutdown to prevent PMIC zombie state..."
+            sync
+            systemctl poweroff
+            exit 0
+        fi
+
+        # Check for Short Press (Bit 4) -> Lock Session
+        if [ $(($val & $SHORT_MASK)) -ne 0 ]; then
+            # Clear the interrupt
+            /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} $SHORT_MASK
             
-            # Clear the interrupt (write 1 to the bit)
-            /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} $MASK
-            
-            # Check if Sway is running
             if pgrep -x sway >/dev/null; then
-                logger -t axp221-monitor "Power button pressed! Locking session..."
-                # Trigger session lock (Swayidle must handle this)
+                logger -t axp221-monitor "Short press detected! Locking session..."
                 /usr/bin/loginctl lock-session
             else
-                logger -t axp221-monitor "Power button pressed but Sway not running (TTY mode). Ignoring."
+                logger -t axp221-monitor "Short press detected but Sway not running. Ignoring."
             fi
             
-            # Continue monitoring (do not exit)
             sleep 1
         fi
     fi
