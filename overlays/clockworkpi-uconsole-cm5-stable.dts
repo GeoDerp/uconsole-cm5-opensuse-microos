@@ -53,8 +53,8 @@
 			#size-cells = <0>;
 
 			/* Bandwidth: DSI byte clock / DPI pixel clock */
-			assigned-clocks = <&rp1_clocks 22>, <&rp1_clocks 41>;
-			assigned-clock-rates = <72000000>, <40000000>;
+			assigned-clocks = <&rp1_clocks 46>, <&rp1_clocks 42>;
+			assigned-clock-rates = <45833333>, <61111240>;
 
 			port {
 				dsi1_out: endpoint {
@@ -70,7 +70,7 @@
 				pinctrl-names = "default";
 				pinctrl-0 = <&panel_id_pins>;
 				backlight = <&ocp8178_backlight>;
-				orientation = <3>;
+				rotation = <90>;
 				vci-supply = <&reg_aldo2>;
 				iovcc-supply = <&reg_aldo2>;
 

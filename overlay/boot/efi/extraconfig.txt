@@ -3,8 +3,9 @@
 # 1. Disable conflicting standard controllers early
 # Disable SPI to prevent GPIO 1 collision with PMIC I2C
 dtparam=spi=off
-# Disable VC4 complex graphics to let drm-rp1-dsi run standalone without panicking
-dtoverlay=disable-vc4
+# NOTE: disable-vc4 overlay MUST NOT be used — it prevents Pi firmware from
+# completing display pipeline handoff to U-Boot, causing a non-boot condition.
+# The drm-rp1-dsi driver coexists with the firmware VC4 pipeline on CM5.
 
 # 2. Base Overlays (Required for CM5 hardware support)
 dtoverlay=clockworkpi-uconsole-cm5-stable

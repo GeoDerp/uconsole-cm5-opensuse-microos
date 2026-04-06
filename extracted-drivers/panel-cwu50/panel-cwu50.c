@@ -685,9 +685,6 @@ static int cwu50_get_modes(struct drm_panel *panel, struct drm_connector *connec
 	connector->display_info.width_mm = mode->width_mm;
 	connector->display_info.height_mm = mode->height_mm;
 
-	/* set up connector's "panel orientation" property */
-	drm_connector_set_panel_orientation(connector, ctx->orientation);
-
 	drm_mode_probed_add(connector, mode);
 
 	return 1; /* Number of modes */
@@ -794,9 +791,6 @@ static int cwu50_probe(struct mipi_dsi_device *dsi)
 
 	ctx->orientation = DRM_MODE_PANEL_ORIENTATION_LEFT_UP;
 	dev_info(dev, "Forced Left-Up orientation for CM5\n");
-
-	ctx->panel.prepare_prev_first = true;
-
 	drm_panel_init(&ctx->panel, dev, &cwu50_drm_funcs, DRM_MODE_CONNECTOR_DSI);
 
 	drm_panel_add(&ctx->panel);
