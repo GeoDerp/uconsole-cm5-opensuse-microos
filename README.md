@@ -4,18 +4,18 @@
 
 This repository provides the definitive drivers, device tree overlays, and automated configuration scripts required to run **openSUSE MicroOS** reliably on the **ClockworkPi uConsole CM5** (Raspberry Pi Compute Module 5). It resolves critical hardware-specific issues including display flickering, power management locks, driver symbol mismatches, and battery monitoring.
 
-## System Status (March 2026)
+## System Status (April 2026)
 
 | Feature | Status | Fix Details |
 |---------|--------|-------------|
-| **Display** | ✅ Stable | Hardcoded landscape rotation. DSI pixel clock locked at a safe 40MHz (by removing GRUB VESA overrides) to permanently eliminate Underflow errors and flickering. |
-| **Graphics**| ✅ Hardware | Standard `vc4` DRM active. Boot screen shows TTY before handing off to Sway/Wayland seamlessly. |
+| **Display** | ✅ Stable | DSI pixel clock locked at a safe 40MHz. DSI byte clock mathematically assigned a 20% overhead margin (36MHz) to prevent DMA starvation. DRM modeset orientation bug completely stripped from the driver to prevent kernel panics. |
+| **Graphics**| ✅ Hardware | Standard `v3d` graphics active. `vc4` blacklisted in Linux but active in firmware for successful U-Boot handoff. Boot screen shows TTY before handing off to Sway/Wayland seamlessly. |
 | **Audio**   | ✅ Working | Speakers functional via `snd_soc_rp1_aout`. Drivers rebuilt against current kernel. |
-| **Battery Fuel Gauge** | ✅ Functional | OpenSUSE lacks the `axp22x_cells` MFD patch. We inject `uconsole_fixup` to bind to the AXP221 PMIC via I2C address `0x34` to expose the battery sysfs. |
+| **Battery Fuel Gauge** | ✅ Functional | Device tree now spawns the `axp221-battery-power-supply` and `axp221-adc` children directly, permanently eliminating the need for the hacky `uconsole_fixup` kernel module! |
+| **Wi-Fi**   | ✅ Working | NetworkManager profiles dynamically fixed to ignore the kernel's `wlan0` to `wld0` interface renaming bug. |
 | **Input (Keyboard/Trackball)**   | ✅ Working | `dwc2` driver forced to `host` mode. Aggressive VBUS hogs removed to prevent PMIC over-current trips on cold boot. |
-| **External USB-A Port**   | ✅ Working | Powered by the same internal hub as the keyboard. |
-| **Power Button** | ⚠️ Limited | Physical 6s hold shuts down. "Tap" polling is managed by `axp221-monitor.sh` but can be disabled if hardware interrupts stick. |
-| **Shutdown** | ✅ Aggressive | Forced PMIC shutdown via direct I2C writes (`axp221-poweroff.sh`) unbinds drivers first to bypass persistent I2C bus locks. |
+| **Power Button** | ✅ Working | `axp221-monitor.service` successfully intercepts a 1.5s Long Press to trigger a graceful OS shutdown, bypassing the buggy 6s hardware kill. |
+| **Shutdown** | ✅ Graceful | Handled safely by the OS to ensure all LDO regulators turn off properly, permanently preventing the PMIC zombie state. |
 | **Battery Safety**| ✅ Active | Background monitor (`uconsole-power-monitor`) broadcasts warnings to TTY/Wayland at **15%**, and forces a hardware shutdown at **8%** to prevent the PMIC from entering a brownout/zombie state. |
 | **MicroSD Slot** | ❌ Not Working | External SD card slot on the mainboard is currently undetected by the RP1 architecture. |
 | **Sleep / Hibernate** | ❌ Not Supported | **Sleep:** Fails due to missing deep sleep ACPI support on XHCI. **Hibernate:** Fails due to no Swap space. <br>✅ *Alternative*: System automatically powers off after **30 minutes** of screen inactivity to preserve battery. |
@@ -77,8 +77,8 @@ ssh user@192.168.1.100 "sudo reboot"
 **Cause**: The CM5 lacks a battery-backed Real Time Clock (RTC). The kernel boots using the Unix epoch (1970) or a historic timestamp saved by systemd. When the network connects, NTP immediately jumps the system clock forward to the present day. This sudden "time travel" confuses the kernel's uptime calculation. **This is expected behavior and is not a bug.**
 
 ### 🛠️ Kernel Updates (Transactional Updates)
-When openSUSE automatically updates the system kernel via `transactional-update`, your display and battery drivers will instantly break on the next boot because the kernel ABI symbols changed.
-**The Fix**: Simply run `./scripts/deploy_stabilized_config.sh` again from your host machine. The script is designed to automatically detect the new kernel, recompile all drivers from source against the new headers, and drop them into the overlay folder.
+When openSUSE automatically updates the system kernel via `transactional-update`, your display and battery drivers will instantly break on the next boot because the kernel ABI symbols changed. If the device falls off the network due to the Wi-Fi driver breaking, you will lose SSH access.
+**The Fix**: Plug the CM5 into your PC via USB and run `./scripts/rebuild_and_deploy_offline.sh`. This script will automatically `chroot` into the CM5 using `qemu-aarch64-static`, natively recompile all drivers against the new kernel headers, and install them safely to the persistent overlay!
 
 ## License
 The scripts and configurations in this repository are open source.

@@ -10,17 +10,16 @@ This document serves as the definitive reference for the hardware stabilization 
 ## 2. MicroOS Transactional Updates & Driver Breakage
 **Symptom**: After a system update, the display stays black and `dmesg` reports `disagrees about version of symbol` for modules like `panel-cwu50`, `ocp8178_bl`, or `snd_soc_rp1_aout`.
 **Root Cause**: openSUSE MicroOS uses transactional updates. When the kernel is updated, the internal "Symbol Versions" (CRCs) change. Custom out-of-tree modules built against the old kernel headers will be rejected by the new kernel.
-**The Fix**: The deployment pipeline (`scripts/deploy_stabilized_config.sh`) was rewritten to automatically handle this. It syncs the C source files to the device, dynamically extracts the active `vmlinux` header file, and natively recompiles every custom driver against the running kernel.
+**The Fix**: The deployment pipeline (`scripts/rebuild_and_deploy_offline.sh`) was created to automatically handle this. If the device falls off the network due to an update, it can be plugged in via USB and natively recompiled against the running kernel via a `chroot` using `qemu-aarch64-static`.
 
 ## 3. DSI Underflows and Display Pipeline
 **Symptom**: The display flashes or tears, and `dmesg` shows `*ERROR* Underflow! (panics=...)`, or the screen remains completely black.
 **Root Cause 1 (Underflows)**: The `video=DSI-1:720x1280@60` parameter in the GRUB boot arguments was acting as a VESA override. It forced the DRM subsystem to push the pixel clock to 77MHz, overriding the safe timings built into the `panel-cwu50` driver. This starved the RP1 DSI controller of memory bandwidth.
-**Root Cause 2 (Black Screen)**: Disabling the `vc4` graphics core (e.g., via `disable-vc4` overlay) breaks the Pi 5's Hardware Video Scaler pipeline, leaving the `drm-rp1-dsi` driver without a valid pixel source. 
+**Root Cause 2 (Black Screen)**: Disabling the `vc4` graphics core (e.g., via `disable-vc4` overlay) breaks the Pi 5's Hardware Video Scaler pipeline, leaving the `drm-rp1-dsi` driver without a valid pixel source and freezing the U-Boot handoff. 
 **The Fix**: 
 *   **Base DTB**: We use `device_tree=merged-clockworkpi.dtb` as the monolithic foundation. It correctly maps the `vc4` pipeline to the DSI controller without claiming the GPIOs needed for the PMIC.
-*   **GRUB**: Removed the `video=DSI-1...` and `video=simplefb:off` overrides from GRUB. The driver now defaults to a safe 40MHz clock with generous blanking, permanently eliminating underflows, and the early boot TTY console displays correctly.
-*   **Driver**: The 90-degree landscape rotation (`LEFT_UP`) is hardcoded directly into the `panel-cwu50` C source. 
-*Note: You will see `vc4-drm axi:gpu: [drm] No compatible format found` in `dmesg`. This is **expected and harmless** in this specific configuration. It indicates the complex Pi 5 VC4 engine yielded some format control, allowing `drm-rp1-dsi` to drive the display autonomously.*
+*   **GRUB**: Removed the `video=DSI-1...` overrides from GRUB. Blacklisted `vc4` in GRUB (`module_blacklist=vc4`) so `v3d` and `drm-rp1-dsi` load without conflict.
+*   **Driver**: Rely on the device tree `rotation = <90>` for orientation.
 
 ## 4. Battery Monitoring (The `uconsole_fixup` Hack)
 **Symptom**: `/sys/class/power_supply` is empty, meaning the OS has no idea what the battery percentage is.
@@ -33,3 +32,18 @@ This document serves as the definitive reference for the hardware stabilization 
 
 ## 6. Power Management Scripts
 All initialization and power monitoring scripts (e.g., `axp221-poweroff.sh`, `uconsole-power-monitor.sh`) now dynamically hunt for the correct software I2C bus (`i2c-13`, `i2c-15`, or `pmic_i2c`). The power monitor gracefully broadcasts warnings to all TTYs at 15% battery and forces a hardware shutdown at 8% (3.55V) to prevent the "Zombie PMIC" state described in Section 1.
+
+## 7. The DSI Starvation Bug (Black Screen)
+**Symptom**: The display driver binds perfectly (`fb0` is created), but the physical screen remains black.
+**Root Cause**: The `drm-rp1-dsi` driver mathematically calculates a 30MHz DSI byte clock for a 40MHz pixel clock. 3 bytes per pixel (RGB888) × 40MHz / 4 lanes = 30MHz. This provides **0% overhead** for DSI packet headers and sync pulses, starving the DMA engine of bandwidth and dropping frames. Furthermore, assigning incorrect DSI clocks in the device tree caused U-Boot to hard lock.
+**The Fix**: Modified `rp1_dsi_dsi.c` to append `* 12 / 10` to the `byte_clock` formula, enforcing a strict 20% DSI bandwidth overhead margin (resulting in a stable 36MHz byte clock).
+
+## 8. DRM Modeset Kernel Panic (Orientation Bug)
+**Symptom**: Kernel panic and DRM stack trace during `drm_client_modeset_probe`.
+**Root Cause**: The `panel-cwu50` driver manually called `drm_connector_set_panel_orientation()` inside `get_modes()`, attaching a property to an already-registered connector, which is illegal in modern DRM core and triggers a fatal `WARN`.
+**The Fix**: Stripped all manual `panel_orientation` logic from the C driver entirely. Rely solely on the `rotation = <90>` property inside the device tree, which the DRM panel bridge parses and applies legally during probe.
+
+## 9. NetworkManager Wi-Fi Renaming Failure
+**Symptom**: Wi-Fi initializes flawlessly (driver loads, no errors), but fails to connect to known networks.
+**Root Cause**: The kernel predictably renames the Broadcom interface from `wlan0` to `wld0` (`brcmfmac mmc1:0001:1 wld0: renamed from wlan0`). If NetworkManager profiles (`/etc/NetworkManager/system-connections/*.nmconnection`) have `interface-name=wlan0` hardcoded, NM ignores the `wld0` device.
+**The Fix**: Delete the `interface-name=` line from all persistent NM connection profiles. Note: on MicroOS, this requires modifying the active `@/etc` BTRFS subvolume.
