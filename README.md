@@ -31,7 +31,21 @@ Because openSUSE MicroOS is a transactional OS, installing out-of-tree display d
 2. Use **Raspberry Pi Imager** to flash the **openSUSE MicroOS (aarch64)** image to the CM5 eMMC.
 3. Wait for the flashing to complete. DO NOT boot the CM5 yet!
 
-### 2. Mount the Partitions
+### 2. Create the Initial User (Combustion)
+openSUSE MicroOS has no default user. You must use the Combustion first-boot tool to create one.
+1. On your host PC, clone this repository:
+   ```bash
+   git clone https://github.com/GeoDerp/uconsole-cm5-opensuse-microos.git
+   cd uconsole-cm5-opensuse-microos
+   ```
+2. Run the helper script to generate the setup configuration:
+   ```bash
+   ./scripts/generate_combustion_script.sh uconsole mypassword ~/.ssh/id_rsa.pub
+   ```
+3. Format a spare USB flash drive with the label `combustion` (FAT32 or ext4).
+4. Copy the generated `combustion` folder to the root of the USB drive. You will plug this into the uConsole during its first boot.
+
+### 3. Mount the Partitions
 Ensure the newly flashed CM5 is still connected to your PC via USB.
 Mount the **EFI** (boot) and **ROOT** (system) partitions to your host machine.
 *(Example for Linux hosts using `udisksctl`):*
@@ -40,13 +54,7 @@ udisksctl mount -b /dev/sda1  # Mounts EFI
 udisksctl mount -b /dev/sda2  # Mounts ROOT
 ```
 
-### 3. Deploy and Compile the Drivers
-On your computer (Linux), clone this repository:
-```bash
-git clone https://github.com/GeoDerp/uconsole-cm5-opensuse-microos.git
-cd uconsole-cm5-opensuse-microos
-```
-
+### 4. Deploy and Compile the Drivers
 Run the offline deployment script. Provide the paths to the mounted EFI and ROOT partitions. 
 *(Note: You must have `qemu-aarch64-static` installed on your host PC to natively cross-compile the drivers).*
 
@@ -62,10 +70,11 @@ Run the offline deployment script. Provide the paths to the mounted EFI and ROOT
 *   **Compile all out-of-tree drivers natively** against the target's kernel headers.
 *   Install the modules and configure GRUB.
 
-### 4. Boot and Enjoy!
+### 5. Boot and Enjoy!
 1. The script will safely unmount the partitions when finished.
 2. Unplug the CM5 from your PC and install it into your uConsole mainboard.
-3. Turn on the power. The screen will display the scrolling Linux TTY boot logs, and hand off seamlessly to the Sway desktop environment!
+3. Plug the `combustion` USB drive into the uConsole's external USB port.
+4. Turn on the power. The screen will display the scrolling Linux TTY boot logs, automatically create your user account, and hand off seamlessly to the Sway desktop environment!
 
 ---
 
