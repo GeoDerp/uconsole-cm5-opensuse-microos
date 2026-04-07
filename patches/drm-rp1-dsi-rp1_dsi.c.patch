@@ -1,0 +1,156 @@
+--- a/extracted-drivers/drm-rp1-dsi/rp1_dsi.c
++++ b/extracted-drivers/drm-rp1-dsi/rp1_dsi.c
+@@ -26,8 +26,9 @@
+ #include <drm/drm_encoder.h>
+ #include <drm/drm_fourcc.h>
+ #include <drm/drm_fb_helper.h>
+-#include <drm/drm_fbdev_ttm.h>
++#include <drm/drm_fbdev_dma.h>
+ #include <drm/drm_framebuffer.h>
++#include <drm/clients/drm_client_setup.h>
+ #include <drm/drm_gem.h>
+ #include <drm/drm_gem_atomic_helper.h>
+ #include <drm/drm_gem_dma_helper.h>
+@@ -42,6 +43,7 @@
+ 
+ #include "rp1_dsi.h"
+ 
++/* Get rp1_dsi from bridge using container_of (embedded bridge in struct rp1_dsi) */
+ static inline struct rp1_dsi *
+ bridge_to_rp1_dsi(struct drm_bridge *bridge)
+ {
+@@ -49,7 +51,7 @@
+ }
+ 
+ static void rp1_dsi_bridge_pre_enable(struct drm_bridge *bridge,
+-				      struct drm_bridge_state *old_state)
++				      struct drm_atomic_state *old_state)
+ {
+ 	struct rp1_dsi *dsi = bridge_to_rp1_dsi(bridge);
+ 
+@@ -58,17 +60,17 @@
+ }
+ 
+ static void rp1_dsi_bridge_enable(struct drm_bridge *bridge,
+-				  struct drm_bridge_state *old_state)
++				  struct drm_atomic_state *old_state)
+ {
+ }
+ 
+ static void rp1_dsi_bridge_disable(struct drm_bridge *bridge,
+-				   struct drm_bridge_state *state)
++				   struct drm_atomic_state *state)
+ {
+ }
+ 
+ static void rp1_dsi_bridge_post_disable(struct drm_bridge *bridge,
+-					struct drm_bridge_state *state)
++					struct drm_atomic_state *state)
+ {
+ 	struct rp1_dsi *dsi = bridge_to_rp1_dsi(bridge);
+ 
+@@ -79,14 +81,14 @@
+ }
+ 
+ static int rp1_dsi_bridge_attach(struct drm_bridge *bridge,
++				 struct drm_encoder *encoder,
+ 				 enum drm_bridge_attach_flags flags)
+ {
+ 	struct rp1_dsi *dsi = bridge_to_rp1_dsi(bridge);
+ 
+ 	/* Attach the panel or bridge to the dsi bridge */
+-	return drm_bridge_attach(bridge->encoder, dsi->out_bridge,
++	return drm_bridge_attach(encoder, dsi->out_bridge,
+ 				 &dsi->bridge, flags);
+-	return 0;
+ }
+ 
+ static const struct drm_bridge_funcs rp1_dsi_bridge_funcs = {
+@@ -111,6 +113,9 @@
+ 	struct drm_gem_dma_object *dma_obj = gem ? to_drm_gem_dma_obj(gem) : NULL;
+ 	bool can_update = fb && dma_obj && dsi && dsi->pipe_enabled;
+ 
++	dev_dbg(&dsi->pdev->dev, "pipe_update: fb=%p dma_obj=%p pipe_enabled=%d can_update=%d\n",
++		fb, dma_obj, dsi ? dsi->pipe_enabled : -1, can_update);
++
+ 	/* (Re-)start DSI,DMA where required; and update FB address */
+ 	if (can_update) {
+ 		if (!dsi->dma_running || fb->format->format != dsi->cur_fmt) {
+@@ -119,10 +124,14 @@
+ 				dsi->dma_running = false;
+ 			}
+ 			if (!dsi->dma_running) {
++				dev_info(&dsi->pdev->dev, "pipe_update: starting DMA, format=0x%x\n",
++					 fb->format->format);
+ 				rp1dsi_dma_setup(dsi,
+ 						 fb->format->format, dsi->display_format,
+ 						&pipe->crtc.state->adjusted_mode);
+ 				dsi->dma_running = true;
++				dev_info(&dsi->pdev->dev, "pipe_update: DMA started, dma_running=%d\n",
++					 dsi->dma_running);
+ 			}
+ 			dsi->cur_fmt  = fb->format->format;
+ 			drm_crtc_vblank_on(&pipe->crtc);
+@@ -155,13 +164,16 @@
+ {
+ 	struct rp1_dsi *dsi = encoder_to_rp1_dsi(encoder);
+ 
++	dev_info(&dsi->pdev->dev, "rp1dsi_encoder_enable: switching to video mode\n");
+ 	/* Put DSI into video mode before starting video */
+ 	rp1dsi_dsi_set_cmdmode(dsi, 0);
+ 
+ 	/* Start DMA -> DPI */
+ 	dsi->pipe_enabled = true;
+ 	dsi->cur_fmt = 0xdeadbeef;
++	dev_info(&dsi->pdev->dev, "rp1dsi_encoder_enable: calling pipe_update\n");
+ 	rp1dsi_pipe_update(&dsi->pipe, 0);
++	dev_info(&dsi->pdev->dev, "rp1dsi_encoder_enable: done, pipe_enabled=%d\n", dsi->pipe_enabled);
+ }
+ 
+ static void rp1dsi_encoder_disable(struct drm_encoder *encoder)
+@@ -261,10 +273,10 @@
+ 	.fops			= &rp1dsi_fops,
+ 	.name			= "drm-rp1-dsi",
+ 	.desc			= "drm-rp1-dsi",
+-	.date			= "0",
+ 	.major			= 1,
+ 	.minor			= 0,
+ 	DRM_GEM_DMA_DRIVER_OPS,
++	DRM_FBDEV_DMA_DRIVER_OPS,
+ 	.release		= rp1dsi_stopall,
+ };
+ 
+@@ -318,7 +330,7 @@
+ 	ret = drm_dev_register(drm, 0);
+ 
+ 	if (ret == 0)
+-		drm_fbdev_ttm_setup(drm, 32);
++		drm_client_setup_with_color_mode(drm, 32);
+ 
+ rtn:
+ 	if (ret)
+@@ -428,9 +440,13 @@
+ 		ret = PTR_ERR(drm);
+ 		return ret;
+ 	}
+-	dsi = drmm_kzalloc(drm, sizeof(*dsi), GFP_KERNEL);
+-	if (!dsi) {
+-		ret = -ENOMEM;
++	/* Use devm_drm_bridge_alloc for kernel 6.17+ API compliance.
++	 * This allocates struct rp1_dsi with the embedded drm_bridge
++	 * properly initialized for the DRM bridge tracking mechanism.
++	 */
++	dsi = devm_drm_bridge_alloc(dev, struct rp1_dsi, bridge, &rp1_dsi_bridge_funcs);
++	if (IS_ERR(dsi)) {
++		ret = PTR_ERR(dsi);
+ 		goto err_free_drm;
+ 	}
+ 	init_completion(&dsi->finished);
+@@ -439,7 +455,6 @@
+ 	drm->dev_private = dsi;
+ 	platform_set_drvdata(pdev, drm);
+ 
+-	dsi->bridge.funcs = &rp1_dsi_bridge_funcs;
+ 	dsi->bridge.of_node = dev->of_node;
+ 	dsi->bridge.type = DRM_MODE_CONNECTOR_DSI;
+ 

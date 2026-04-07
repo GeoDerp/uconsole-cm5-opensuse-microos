@@ -1,0 +1,227 @@
+--- a/extracted-drivers/axp20x_battery/axp20x_battery.c
++++ b/extracted-drivers/axp20x_battery/axp20x_battery.c
+@@ -2,10 +2,10 @@
+  * Battery power supply driver for X-Powers AXP20X and AXP22X PMICs
+  *
+  * Copyright 2016 Free Electrons NextThing Co.
+- *	Quentin Schulz <quentin.schulz@free-electrons.com>
++ * 	Quentin Schulz <quentin.schulz@free-electrons.com>
+  *
+  * This driver is based on a previous upstreaming attempt by:
+- *	Bruno Prémont <bonbons@linux-vserver.org>
++ * 	Bruno Prémont <bonbons@linux-vserver.org>
+  *
+  * This file is subject to the terms and conditions of the GNU General
+  * Public License. See the file "COPYING" in the main directory of this
+@@ -243,7 +243,7 @@
+ }
+ 
+ static int axp20x_get_constant_charge_current(struct axp20x_batt_ps *axp,
+-					      int *val)
++							      int *val)
+ {
+ 	int ret;
+ 
+@@ -259,7 +259,7 @@
+ }
+ 
+ static int axp717_get_constant_charge_current(struct axp20x_batt_ps *axp,
+-					      int *val)
++							      int *val)
+ {
+ 	int ret;
+ 
+@@ -303,7 +303,7 @@
+ 		}
+ 
+ 		ret = iio_read_channel_processed(axp20x_batt->batt_dischrg_i,
+-						 &val1);
++							 &val1);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -342,7 +342,7 @@
+ 
+ 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT:
+ 		ret = axp20x_get_constant_charge_current(axp20x_batt,
+-							 &val->intval);
++								 &val->intval);
+ 		if (ret)
+ 			return ret;
+ 		break;
+@@ -360,10 +360,10 @@
+ 		/* IIO framework gives mA but Power Supply framework gives uA */
+ 		if (reg & AXP20X_PWR_STATUS_BAT_CHARGING) {
+ 			ret = iio_read_channel_processed_scale(axp20x_batt->batt_chrg_i,
+-							       &val->intval, 1000);
++								       &val->intval, 1000);
+ 		} else {
+ 			ret = iio_read_channel_processed_scale(axp20x_batt->batt_dischrg_i,
+-							       &val1, 1000);
++									 &val1, 1000);
+ 			val->intval = -val1;
+ 		}
+ 		if (ret)
+@@ -412,7 +412,7 @@
+ 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+ 		/* IIO framework gives mV but Power Supply framework gives uV */
+ 		ret = iio_read_channel_processed_scale(axp20x_batt->batt_v,
+-						 &val->intval, 1000);
++							 &val->intval, 1000);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -511,7 +511,7 @@
+ 
+ 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
+ 		ret = axp717_get_constant_charge_current(axp20x_batt,
+-							 &val->intval);
++								 &val->intval);
+ 		if (ret)
+ 			return ret;
+ 		return 0;
+@@ -526,7 +526,7 @@
+ 		 * gives uA.
+ 		 */
+ 		ret = iio_read_channel_processed_scale(axp20x_batt->batt_chrg_i,
+-						       &val->intval, 1000);
++							       &val->intval, 1000);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -542,7 +542,7 @@
+ 			return -ENODEV;
+ 
+ 		ret = regmap_read(axp20x_batt->regmap,
+-				  AXP717_BATT_PERCENT_DATA, &reg);
++					  AXP717_BATT_PERCENT_DATA, &reg);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -559,7 +559,7 @@
+ 
+ 	case POWER_SUPPLY_PROP_VOLTAGE_MIN:
+ 		ret = regmap_read(axp20x_batt->regmap,
+-				  AXP717_VSYS_V_POWEROFF, &reg);
++					  AXP717_VSYS_V_POWEROFF, &reg);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -570,7 +570,7 @@
+ 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+ 		/* IIO framework gives mV but Power Supply framework gives uV */
+ 		ret = iio_read_channel_processed_scale(axp20x_batt->batt_v,
+-						       &val->intval, 1000);
++							       &val->intval, 1000);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -578,7 +578,7 @@
+ 
+ 	case POWER_SUPPLY_PROP_CHARGE_TERM_CURRENT:
+ 		ret = regmap_read(axp20x_batt->regmap,
+-				  AXP717_ITERM_CHG_SET, &reg);
++					  AXP717_ITERM_CHG_SET, &reg);
+ 		if (ret)
+ 			return ret;
+ 
+@@ -676,7 +676,7 @@
+ }
+ 
+ static int axp20x_set_constant_charge_current(struct axp20x_batt_ps *axp_batt,
+-					      int charge_current)
++							      int charge_current)
+ {
+ 	if (charge_current > axp_batt->max_ccc)
+ 		return -EINVAL;
+@@ -692,7 +692,7 @@
+ }
+ 
+ static int axp717_set_constant_charge_current(struct axp20x_batt_ps *axp,
+-					      int charge_current)
++							      int charge_current)
+ {
+ 	int val;
+ 
+@@ -710,7 +710,7 @@
+ }
+ 
+ static int axp20x_set_max_constant_charge_current(struct axp20x_batt_ps *axp,
+-						  int charge_current)
++								  int charge_current)
+ {
+ 	bool lower_max = false;
+ 
+@@ -725,7 +725,7 @@
+ 
+ 	if (charge_current > axp->max_ccc)
+ 		dev_warn(axp->dev,
+-			 "Setting max constant charge current higher than previously defined. Note that increasing the constant charge current may damage your battery.\n");
++		 "Setting max constant charge current higher than previously defined. Note that increasing the constant charge current may damage your battery.\n");
+ 	else
+ 		lower_max = true;
+ 
+@@ -789,12 +789,12 @@
+ 		switch (val->intval) {
+ 		case POWER_SUPPLY_STATUS_CHARGING:
+ 			return regmap_update_bits(axp20x_batt->regmap, AXP20X_CHRG_CTRL1,
+-				AXP20X_CHRG_CTRL1_ENABLE, AXP20X_CHRG_CTRL1_ENABLE);
++					AXP20X_CHRG_CTRL1_ENABLE, AXP20X_CHRG_CTRL1_ENABLE);
+ 
+ 		case POWER_SUPPLY_STATUS_DISCHARGING:
+ 		case POWER_SUPPLY_STATUS_NOT_CHARGING:
+ 			return regmap_update_bits(axp20x_batt->regmap, AXP20X_CHRG_CTRL1,
+-				AXP20X_CHRG_CTRL1_ENABLE, 0);
++					AXP20X_CHRG_CTRL1_ENABLE, 0);
+ 		}
+ 		fallthrough;
+ 	default:
+@@ -964,14 +964,14 @@
+ 
+ 	if (vmin > 0 && axp20x_set_voltage_min_design(axp_batt, vmin))
+ 		dev_err(&pdev->dev,
+-			"couldn't set voltage_min_design\n");
++		"couldn't set voltage_min_design\n");
+ 
+ 	/* Set max to unverified value to be able to set CCC */
+ 	axp_batt->max_ccc = ccc;
+ 
+ 	if (ccc <= 0 || axp20x_set_constant_charge_current(axp_batt, ccc)) {
+ 		dev_err(&pdev->dev,
+-			"couldn't set ccc from DT: fallback to min value\n");
++		"couldn't set ccc from DT: fallback to min value\n");
+ 		ccc = 300000;
+ 		axp_batt->max_ccc = ccc;
+ 		axp20x_set_constant_charge_current(axp_batt, ccc);
+@@ -1007,18 +1007,18 @@
+ 
+ 	if (vmin > 0 && axp717_set_voltage_min_design(axp_batt, vmin))
+ 		dev_err(&pdev->dev,
+-			"couldn't set voltage_min_design\n");
++		"couldn't set voltage_min_design\n");
+ 
+ 	if (vmax > 0 && axp717_battery_set_max_voltage(axp_batt, vmax))
+ 		dev_err(&pdev->dev,
+-			"couldn't set voltage_max_design\n");
++		"couldn't set voltage_max_design\n");
+ 
+ 	axp717_get_constant_charge_current(axp_batt, &val);
+ 	axp_batt->max_ccc = ccc;
+ 	if (ccc <= 0 || axp717_set_constant_charge_current(axp_batt, ccc)) {
+ 		dev_err(&pdev->dev,
+-			"couldn't set ccc from DT: current ccc is %d\n",
+-			val);
++		"couldn't set ccc from DT: current ccc is %d\n",
++		val);
+ 	}
+ }
+ 
+@@ -1073,7 +1073,7 @@
+ };
+ 
+ static const struct of_device_id axp20x_battery_ps_id[] = {
+-	{
++	{ 
+ 		.compatible = "x-powers,axp209-battery-power-supply",
+ 		.data = (void *)&axp209_data,
+ 	}, {

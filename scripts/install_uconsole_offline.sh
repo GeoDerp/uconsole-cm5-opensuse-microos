@@ -23,6 +23,12 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
+# Ensure driver sources have been fetched
+if [ ! -d "$REPO_DIR/extracted-drivers" ] || [ -z "$(ls -A "$REPO_DIR/extracted-drivers" 2>/dev/null)" ]; then
+    echo "Driver sources not found. Fetching from upstream..."
+    "$SCRIPT_DIR/fetch-drivers.sh"
+fi
+
 echo "=== Building Device Tree Overlays ==="
 "$SCRIPT_DIR/build_overlay.sh" "$REPO_DIR/overlays/clockworkpi-uconsole-cm5-stable.dts" "$REPO_DIR/overlays/clockworkpi-uconsole-cm5-stable.dtbo"
 "$SCRIPT_DIR/build_overlay.sh" "$REPO_DIR/overlays/uconsole-audio.dts" "$REPO_DIR/overlays/uconsole-audio.dtbo"

@@ -2,7 +2,9 @@
 
 ![alt text](img/uconsole.jpg)
 
-This repository provides the definitive drivers, device tree overlays, and automated configuration scripts required to run **openSUSE MicroOS** reliably on the **ClockworkPi uConsole CM5** (Raspberry Pi Compute Module 5). It resolves critical hardware-specific issues including display flickering, power management locks, driver symbol mismatches, and battery monitoring.
+This repository provides device tree overlays, automated configuration scripts, and a driver-fetch tool required to run **openSUSE MicroOS** reliably on the **ClockworkPi uConsole CM5** (Raspberry Pi Compute Module 5). It resolves critical hardware-specific issues including display flickering, power management locks, driver symbol mismatches, and battery monitoring.
+
+> **Note:** The out-of-tree kernel drivers required by the uConsole are licensed under **GPL-2.0** and are _not_ included in this MIT-licensed repository. Run `./scripts/fetch-drivers.sh` to download them from their upstream sources before building.
 
 ## System Status (April 2026)
 
@@ -30,6 +32,13 @@ Because openSUSE MicroOS is a transactional OS, installing out-of-tree display d
 1. Connect your CM5 to your PC via USB (using the `rpiboot` tool or a CM4 IO board).
 2. Use **Raspberry Pi Imager** to flash the **openSUSE MicroOS (aarch64)** image to the CM5 eMMC.
 3. Wait for the flashing to complete. DO NOT boot the CM5 yet!
+
+### 1.5. Fetch the Driver Sources
+The GPL-licensed kernel drivers are not included in this repository. Fetch them from upstream:
+```bash
+./scripts/fetch-drivers.sh
+```
+This downloads the required driver source code from the [ClockworkPi Linux kernel](https://github.com/ak-rex/ClockworkPi-linux), [Raspberry Pi Linux kernel](https://github.com/raspberrypi/linux), and [mainline Linux kernel](https://github.com/torvalds/linux) into `extracted-drivers/`. See [Acknowledgments](#acknowledgments) for full attribution.
 
 ### 2. Create the Initial User (Combustion)
 openSUSE MicroOS has no default user. You must use the Combustion first-boot tool to create one.
@@ -97,6 +106,34 @@ Run the offline deployment script. Provide the paths to the mounted EFI and ROOT
 When openSUSE automatically updates the system kernel via `transactional-update`, your display and battery drivers will instantly break on the next boot because the kernel ABI symbols changed. If the device falls off the network due to the Wi-Fi driver breaking, you will lose SSH access.
 **The Fix**: Unplug the CM5, mount it to your PC via USB, and simply run `./scripts/install_uconsole_offline.sh` again! The script is designed to safely rebuild the drivers against whatever new kernel openSUSE has installed.
 
+## Acknowledgments
+
+This project would not exist without the incredible work of the ClockworkPi community and the open-source kernel developers who wrote the drivers this hardware depends on.
+
+### Rex ([@ak-rex](https://github.com/ak-rex))
+Rex created and maintains the [ClockworkPi Linux kernel fork](https://github.com/ak-rex/ClockworkPi-linux) (`rpi-6.12.y` branch) — the **single upstream source** for CM5 display, backlight, and panel drivers. The device tree overlay structure, PMIC wiring, and DSI integration in this repository are all directly derived from Rex's kernel work. Without Rex's tireless reverse-engineering and board bring-up, running Linux on the uConsole CM5 would simply not be possible.
+
+### ClockworkPi Community
+The [ClockworkPi Forum](https://forum.clockworkpi.com) community provided essential hardware debugging knowledge, boot-log analysis, and real-world testing that informed every fix in this repository. Special thanks to everyone who shared serial console captures, PMIC register dumps, and workaround discoveries.
+
+### Driver Authors (GPL-2.0)
+The following kernel drivers are fetched by `./scripts/fetch-drivers.sh` from their original GPL-licensed repositories. All copyright belongs to their respective authors:
+
+| Driver | Authors / Copyright | Source |
+|--------|---------------------|--------|
+| **RP1 DSI** (`drm-rp1-dsi`) | Copyright (c) 2023 **Raspberry Pi Limited** | [raspberrypi/linux](https://github.com/raspberrypi/linux) |
+| **RP1 Audio** (`snd-soc-rp1-aout`) | Copyright (c) 2025 **Raspberry Pi Ltd** | [raspberrypi/linux](https://github.com/raspberrypi/linux) |
+| **CWU50 Panel** (`panel-cwu50`) | **ClockworkPi / Clockwork Tech LLC** | [ak-rex/ClockworkPi-linux](https://github.com/ak-rex/ClockworkPi-linux) |
+| **CWD686 Panel** (`panel-cwd686`) | **ClockworkPi / Clockwork Tech LLC** | [ak-rex/ClockworkPi-linux](https://github.com/ak-rex/ClockworkPi-linux) |
+| **CWU50-CM3 Panel** (`panel-cwu50-cm3`) | Copyright (c) 2021 **Clockwork Tech LLC**, **Max Fierke** | [ak-rex/ClockworkPi-linux](https://github.com/ak-rex/ClockworkPi-linux) |
+| **OCP8178 Backlight** (`ocp8178_bl`) | **ClockworkPi** | [ak-rex/ClockworkPi-linux](https://github.com/ak-rex/ClockworkPi-linux) |
+| **AXP20x Battery** (`axp20x_battery`) | Copyright (c) 2016 **Free Electrons / NextThing Co.** | [torvalds/linux](https://github.com/torvalds/linux) |
+| **AXP20x AC Power** (`axp20x_ac_power`) | Copyright (c) 2016 **Free Electrons** | [torvalds/linux](https://github.com/torvalds/linux) |
+
+---
+
 ## License
-The scripts and configurations in this repository are open source.
-The kernel drivers in `extracted-drivers/` are derived from the Linux Kernel and Raspberry Pi kernel source, licensed under **GPL-2.0-or-later**.
+
+The scripts, configurations, device tree overlays, and tooling in this repository are licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
+The kernel driver source code in `extracted-drivers/` (fetched by `./scripts/fetch-drivers.sh`) is **not part of this repository** — it is downloaded from upstream and is licensed under **GPL-2.0-or-later** by its respective authors.

@@ -1,0 +1,11 @@
+--- a/extracted-drivers/drm-rp1-dsi/rp1_dsi.h
++++ b/extracted-drivers/drm-rp1-dsi/rp1_dsi.h
+@@ -42,7 +42,7 @@
+ 
+ 	/* Framework and helper objects */
+ 	struct drm_simple_display_pipe pipe;
+-	struct drm_bridge bridge;
++	struct drm_bridge bridge;  /* Must be embedded for devm_drm_bridge_alloc() */
+ 	struct drm_bridge *out_bridge;
+ 	struct mipi_dsi_host dsi_host;
+ 

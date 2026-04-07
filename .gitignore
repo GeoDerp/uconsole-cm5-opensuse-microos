@@ -48,6 +48,16 @@ __pycache__/
 # Logs
 *.log
 
+# GPL-licensed driver sources (fetched by scripts/fetch-drivers.sh)
+extracted-drivers/
+kernel-patch/
+
+# Derived device tree binaries
+merged-clockworkpi.dtb*
+merged-clockworkpi.dts
+merged.dtb
+base.dtb
+
 # Temporary files
 /tmp/
 

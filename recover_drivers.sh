@@ -1,4 +1,11 @@
 #!/bin/bash
+# Recover uConsole drivers from a USB drive.
+#
+# Before using this script, you must create the tarball on your host PC:
+#   1. ./scripts/fetch-drivers.sh
+#   2. tar -czf uconsole-drivers.tar.gz extracted-drivers/
+#   3. Copy uconsole-drivers.tar.gz to a USB drive
+#
 set -euo pipefail
 
 echo "--- uConsole Driver Recovery ---"

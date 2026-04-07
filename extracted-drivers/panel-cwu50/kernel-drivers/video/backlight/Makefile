@@ -1,1 +1,0 @@
-obj-$(CONFIG_BACKLIGHT_OCP8178)		+= ocp8178_bl.o

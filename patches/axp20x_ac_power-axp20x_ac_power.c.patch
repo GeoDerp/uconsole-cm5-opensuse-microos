@@ -1,0 +1,97 @@
+--- a/extracted-drivers/axp20x_ac_power/axp20x_ac_power.c
++++ b/extracted-drivers/axp20x_ac_power/axp20x_ac_power.c
+@@ -3,7 +3,7 @@
+  * AXP20X and AXP22X PMICs' ACIN power supply driver
+  *
+  * Copyright (C) 2016 Free Electrons
+- *	Quentin Schulz <quentin.schulz@free-electrons.com>
++ * 	Quentin Schulz <quentin.schulz@free-electrons.com>
+  */
+ 
+ #include <linux/device.h>
+@@ -45,7 +45,7 @@
+ 	struct iio_channel *acin_i;
+ 	bool has_acin_path_sel;
+ 	unsigned int num_irqs;
+-	unsigned int irqs[] __counted_by(num_irqs);
++	unsigned int irqs[];
+ };
+ 
+ static irqreturn_t axp20x_ac_power_irq(int irq, void *devid)
+@@ -58,8 +58,8 @@
+ }
+ 
+ static int axp20x_ac_power_get_property(struct power_supply *psy,
+-					enum power_supply_property psp,
+-					union power_supply_propval *val)
++						enum power_supply_property psp,
++							union power_supply_propval *val)
+ {
+ 	struct axp20x_ac_power *power = power_supply_get_drvdata(psy);
+ 	int ret, reg;
+@@ -154,8 +154,8 @@
+ }
+ 
+ static int axp813_ac_power_set_property(struct power_supply *psy,
+-					enum power_supply_property psp,
+-					const union power_supply_propval *val)
++							enum power_supply_property psp,
++							const union power_supply_propval *val)
+ {
+ 	struct axp20x_ac_power *power = power_supply_get_drvdata(psy);
+ 
+@@ -189,7 +189,7 @@
+ }
+ 
+ static int axp813_ac_power_prop_writeable(struct power_supply *psy,
+-					  enum power_supply_property psp)
++										 enum power_supply_property psp)
+ {
+ 	return psp == POWER_SUPPLY_PROP_ONLINE ||
+ 	       psp == POWER_SUPPLY_PROP_VOLTAGE_MIN ||
+@@ -251,7 +251,7 @@
+ 
+ struct axp_data {
+ 	const struct power_supply_desc	*power_desc;
+-	const char * const		*irq_names;
++	const char * const	*irq_names;
+ 	unsigned int			num_irq_names;
+ 	bool				acin_adc;
+ 	bool				acin_path_sel;
+@@ -368,8 +368,8 @@
+ 	psy_cfg.drv_data = power;
+ 
+ 	power->supply = devm_power_supply_register(&pdev->dev,
+-						   axp_data->power_desc,
+-						   &psy_cfg);
++								   axp_data->power_desc,
++								   &psy_cfg);
+ 	if (IS_ERR(power->supply))
+ 		return PTR_ERR(power->supply);
+ 
+@@ -381,11 +381,11 @@
+ 
+ 		power->irqs[i] = regmap_irq_get_virq(axp20x->regmap_irqc, irq);
+ 		ret = devm_request_any_context_irq(&pdev->dev, power->irqs[i],
+-						   axp20x_ac_power_irq, 0,
+-						   DRVNAME, power);
++									 axp20x_ac_power_irq, 0,
++									 DRVNAME, power);
+ 		if (ret < 0) {
+ 			dev_err(&pdev->dev, "Error requesting %s IRQ: %d\n",
+-				axp_data->irq_names[i], ret);
++						axp_data->irq_names[i], ret);
+ 			return ret;
+ 		}
+ 	}
+@@ -403,7 +403,9 @@
+ 	}, {
+ 		.compatible = "x-powers,axp813-ac-power-supply",
+ 		.data = &axp813_data,
+-	}, { /* sentinel */ }
++	}, {
++		/* sentinel */ 
++	}
+ };
+ MODULE_DEVICE_TABLE(of, axp20x_ac_power_match);
+ 
