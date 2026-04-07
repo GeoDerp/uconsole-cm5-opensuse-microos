@@ -22,42 +22,50 @@ This repository provides the definitive drivers, device tree overlays, and autom
 
 ---
 
-## Installation (Fresh Install)
+## Installation Guide (Offline Flash)
 
-Follow these steps to set up a new openSUSE MicroOS installation on the uConsole CM5. Our deployment script is fully automated and "Self-Healing"—it natively recompiles all custom drivers against whatever kernel MicroOS has installed.
+Because openSUSE MicroOS is a transactional OS, installing out-of-tree display drivers *after* booting can be extremely difficult. We have created a seamless **offline installation** process. You will flash the OS, compile the custom drivers on your PC via a `chroot`, and deploy them directly to the CM5 before ever plugging it into the uConsole.
 
-### 1. Prepare the OS
-1.  Flash the **openSUSE MicroOS (aarch64)** image to your CM5 eMMC or an SD card (using a CM4 IO board or RPi Imager).
-2.  Boot the device. Connect a USB keyboard/mouse and external display if needed.
-3.  Connect to Wi-Fi/Ethernet.
-4.  Enable SSH: `sudo systemctl enable --now sshd`.
+### 1. Flash the OS
+1. Connect your CM5 to your PC via USB (using the `rpiboot` tool or a CM4 IO board).
+2. Use **Raspberry Pi Imager** to flash the **openSUSE MicroOS (aarch64)** image to the CM5 eMMC.
+3. Wait for the flashing to complete. DO NOT boot the CM5 yet!
 
-### 2. Prepare the Host
-On your computer (Linux/macOS), clone this repository:
+### 2. Mount the Partitions
+Ensure the newly flashed CM5 is still connected to your PC via USB.
+Mount the **EFI** (boot) and **ROOT** (system) partitions to your host machine.
+*(Example for Linux hosts using `udisksctl`):*
+```bash
+udisksctl mount -b /dev/sda1  # Mounts EFI
+udisksctl mount -b /dev/sda2  # Mounts ROOT
+```
+
+### 3. Deploy and Compile the Drivers
+On your computer (Linux), clone this repository:
 ```bash
 git clone https://github.com/GeoDerp/uconsole-cm5-opensuse-microos.git
 cd uconsole-cm5-opensuse-microos
 ```
 
-### 3. The "One-Click" Deployment
-Run the master stabilization script. This script will:
-*   Compile the customized device tree overlay.
-*   Sync the C source code for all uConsole drivers to the device.
-*   Extract the kernel headers (`vmlinux`) from the active MicroOS snapshot.
-*   **Compile all out-of-tree drivers natively on the device** (fixing symbol version mismatch errors).
-*   Install the power management scripts and configure GRUB.
+Run the offline deployment script. Provide the paths to the mounted EFI and ROOT partitions. 
+*(Note: You must have `qemu-aarch64-static` installed on your host PC to natively cross-compile the drivers).*
 
 ```bash
-# Replace user@192.168.1.100 with your user and device IP
-./scripts/deploy_stabilized_config.sh user@192.168.1.100
+# Example paths (adjust to match your mount points):
+./scripts/install_uconsole_offline.sh /run/media/$USER/EFI /run/media/$USER/ROOT
 ```
 
-### 4. Reboot and Finalize
-The script will instruct you to reboot. Because MicroOS uses transactional updates, you must restart for the changes to take effect.
-```bash
-ssh user@192.168.1.100 "sudo reboot"
-```
-*Note: If the system hangs during shutdown (green LED stays on), the PMIC is locked. Perform a 60-second battery pull (see Troubleshooting below).*
+**This script will automatically:**
+*   Compile the customized device tree overlays.
+*   Copy all configuration files, services, and NetworkManager fixes to the root filesystem.
+*   `chroot` into the CM5 using `qemu-aarch64-static`.
+*   **Compile all out-of-tree drivers natively** against the target's kernel headers.
+*   Install the modules and configure GRUB.
+
+### 4. Boot and Enjoy!
+1. The script will safely unmount the partitions when finished.
+2. Unplug the CM5 from your PC and install it into your uConsole mainboard.
+3. Turn on the power. The screen will display the scrolling Linux TTY boot logs, and hand off seamlessly to the Sway desktop environment!
 
 ---
 
@@ -78,7 +86,7 @@ ssh user@192.168.1.100 "sudo reboot"
 
 ### 🛠️ Kernel Updates (Transactional Updates)
 When openSUSE automatically updates the system kernel via `transactional-update`, your display and battery drivers will instantly break on the next boot because the kernel ABI symbols changed. If the device falls off the network due to the Wi-Fi driver breaking, you will lose SSH access.
-**The Fix**: Plug the CM5 into your PC via USB and run `./scripts/rebuild_and_deploy_offline.sh`. This script will automatically `chroot` into the CM5 using `qemu-aarch64-static`, natively recompile all drivers against the new kernel headers, and install them safely to the persistent overlay!
+**The Fix**: Unplug the CM5, mount it to your PC via USB, and simply run `./scripts/install_uconsole_offline.sh` again! The script is designed to safely rebuild the drivers against whatever new kernel openSUSE has installed.
 
 ## License
 The scripts and configurations in this repository are open source.
