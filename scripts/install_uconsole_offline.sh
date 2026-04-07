@@ -29,6 +29,34 @@ if [ ! -d "$REPO_DIR/extracted-drivers" ] || [ -z "$(ls -A "$REPO_DIR/extracted-
     "$SCRIPT_DIR/fetch-drivers.sh"
 fi
 
+# Detect BTRFS and mount necessary subvolumes on MicroOS
+ROOT_DEV=$(df -P "$ROOT_DIR" | tail -1 | awk '{print $1}')
+FSTYPE=$(df -T -P "$ROOT_DIR" | tail -1 | awk '{print $2}')
+
+MOUNTED_ETC=false
+MOUNTED_VAR=false
+
+if [ "$FSTYPE" == "btrfs" ]; then
+    echo "=== Mounting BTRFS Subvolumes ==="
+    ROOT_SUBVOL_ID=$(sudo btrfs inspect-internal rootid "$ROOT_DIR" || echo "")
+    if [ -n "$ROOT_SUBVOL_ID" ]; then
+        # Find nested etc subvolume for this snapshot
+        ETC_SUBVOL_ID=$(sudo btrfs subvolume list "$ROOT_DIR" | grep "top level $ROOT_SUBVOL_ID path.*etc$" | awk '{print $2}' | head -n 1 || true)
+        if [ -n "$ETC_SUBVOL_ID" ]; then
+            echo "Mounting nested etc subvolume (ID: $ETC_SUBVOL_ID)..."
+            sudo mount -t btrfs -o subvolid="$ETC_SUBVOL_ID" "$ROOT_DEV" "$ROOT_DIR/etc"
+            MOUNTED_ETC=true
+        fi
+    fi
+    
+    # Mount persistent @/var
+    if sudo btrfs subvolume list "$ROOT_DIR" | grep -q 'path @/var$'; then
+        echo "Mounting persistent @/var subvolume..."
+        sudo mount -t btrfs -o subvol=/@/var "$ROOT_DEV" "$ROOT_DIR/var"
+        MOUNTED_VAR=true
+    fi
+fi
+
 echo "=== Building Device Tree Overlays ==="
 "$SCRIPT_DIR/build_overlay.sh" "$REPO_DIR/overlays/clockworkpi-uconsole-cm5-stable.dts" "$REPO_DIR/overlays/clockworkpi-uconsole-cm5-stable.dtbo"
 "$SCRIPT_DIR/build_overlay.sh" "$REPO_DIR/overlays/uconsole-audio.dts" "$REPO_DIR/overlays/uconsole-audio.dtbo"
@@ -91,8 +119,6 @@ echo "=== Compiling Drivers for ARM64 (Takes 1-2 minutes) ==="
 sudo chroot "$ROOT_DIR" /bin/bash /tmp/build.sh
 
 echo "=== Installing Drivers ==="
-# Since this script runs on the host, we might need to mount the @/var subvolume to make changes persistent on MicroOS.
-# If /var is empty, we create /var/lib/modules-overlay and copy them.
 sudo mkdir -p "$ROOT_DIR/var/lib/modules-overlay"
 sudo cp -v "$ROOT_DIR/tmp/built-modules/"*.ko "$ROOT_DIR/var/lib/modules-overlay/"
 
@@ -105,6 +131,13 @@ sudo sed -i 's/ quiet / /g' "$ROOT_DIR/etc/default/grub" || true
 
 echo "=== Cleaning Up ==="
 sudo rm -rf "$ROOT_DIR/tmp/extracted-drivers" "$ROOT_DIR/tmp/build.sh" "$ROOT_DIR/tmp/built-modules"
+
+if [ "$MOUNTED_ETC" = true ]; then
+    sudo umount "$ROOT_DIR/etc" || true
+fi
+if [ "$MOUNTED_VAR" = true ]; then
+    sudo umount "$ROOT_DIR/var" || true
+fi
 
 echo ""
 echo "=========================================================="
