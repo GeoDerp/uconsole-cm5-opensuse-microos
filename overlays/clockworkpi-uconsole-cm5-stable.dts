@@ -129,7 +129,7 @@
 				constant-charge-current-max-microamp = <2100000>;
 				voltage-max-design-microvolt = <4200000>;
 				re-charge-voltage-microvolt = <4000000>;
-				voltage-min-design-microvolt = <2900000>;
+				voltage-min-design-microvolt = <3550000>;
 				energy-full-design-microwatt-hours = <24790000>;
 				charge-full-design-microamp-hours = <6700000>;
 			};

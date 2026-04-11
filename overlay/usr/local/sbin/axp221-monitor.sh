@@ -53,6 +53,13 @@ while true; do
     val=$(/usr/sbin/i2cget -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} 2>/dev/null)
     
     if [ -n "$val" ]; then
+        # Ignore I2C bus lockup which returns 0xFF (all bits set)
+        if [ "$val" = "0xff" ] || [ "$val" = "0xFF" ]; then
+            logger -t axp221-monitor "I2C bus returned 0xFF. Ignoring to prevent false poweroff."
+            sleep 2
+            continue
+        fi
+
         # Check for Long Press (Bit 5) first -> Graceful Shutdown
         if [ $(($val & $LONG_MASK)) -ne 0 ]; then
             /usr/sbin/i2cset -f -y ${AXP_BUS} ${AXP_ADDR} ${IRQ_STAT1_REG} $LONG_MASK

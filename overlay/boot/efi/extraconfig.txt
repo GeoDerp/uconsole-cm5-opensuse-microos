@@ -3,6 +3,8 @@
 # 1. Disable conflicting standard controllers early
 # Disable SPI to prevent GPIO 1 collision with PMIC I2C
 dtparam=spi=off
+# Force use of external U.FL Wi-Fi antenna instead of onboard trace (uncomment if antenna is plugged in)
+#dtparam=ant2
 # NOTE: disable-vc4 overlay MUST NOT be used — it prevents Pi firmware from
 # completing display pipeline handoff to U-Boot, causing a non-boot condition.
 # The drm-rp1-dsi driver coexists with the firmware VC4 pipeline on CM5.
