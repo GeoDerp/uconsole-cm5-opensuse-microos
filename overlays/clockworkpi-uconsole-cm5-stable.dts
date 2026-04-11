@@ -263,4 +263,23 @@
 			dr_mode = "host";
 		};
 	};
+
+	/* ================================================================
+	 * 6. Disable unused RP1 XHCI USB controllers to prevent interrupt storm
+	 *    The floating pins on the CM5 uConsole trigger continuous
+	 *    "over-current condition" interrupts which lag the DWC2 keyboard.
+	 * ================================================================ */
+	fragment@8 {
+		target = <&rp1_usb0>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@9 {
+		target = <&rp1_usb1>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
 };
