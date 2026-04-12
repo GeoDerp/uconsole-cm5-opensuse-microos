@@ -10,7 +10,21 @@
  #include <linux/module.h>
  
  struct cwu50 {
-@@ -685,9 +686,6 @@
+@@ -633,13 +634,6 @@
+ 		return ret;
+ 	}
+ 	/* Exit sleep mode and power on */
+-	dcs_write_seq(0x11);// SLPOUT
+-        msleep(120);
+-        dcs_write_seq(0xE0,0x00);
+-        mipi_dsi_dcs_read(dsi, 0x04, buf, 3);
+-	
+-        if(buf[0] == 0x39) ctx->is_new_panel = 1;
+-
+ 	if (ctx->is_new_panel)
+ 		cwu50_init_sequence2(ctx);
+ 	else
+@@ -685,9 +679,6 @@
  	connector->display_info.width_mm = mode->width_mm;
  	connector->display_info.height_mm = mode->height_mm;
  
@@ -20,3 +34,21 @@
  	drm_mode_probed_add(connector, mode);
  
  	return 1; /* Number of modes */
+@@ -737,12 +728,16 @@
+ 		return ret;
+ 	}
+ 
+-	ctx->is_new_panel = gpiod_get_value_cansleep(ctx->id_gpio);
++	ctx->is_new_panel = false;
++	dev_info(dev, "Forced old panel type for reliable CM5 reset\n");
++
++	/*
+ 	if (ctx->is_new_panel) {
+ 		dev_info(dev, "Detected new panel type\n");
+ 	} else {
+ 		dev_info(dev, "Detected old panel type\n");
+ 	}
++	*/
+ 
+ 	/*
+ 	 * Switch the ID GPIO to OUTPUT for use with resetting,
